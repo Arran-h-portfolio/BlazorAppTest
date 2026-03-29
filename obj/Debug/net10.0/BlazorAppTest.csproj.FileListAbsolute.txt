@@ -83,3 +83,4 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.pdb
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.genruntimeconfig.cache
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/ref/BlazorAppTest.dll
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.sourcelink.json
