@@ -1,19 +1,14 @@
 ﻿@page "/counter"
 @rendermode InteractiveServer
 
-<PageTitle>Counter</PageTitle>
+<PageTitle>Staff Manager</PageTitle>
 
-<h1>Counter</h1>
+<h1>Staffing</h1>
 
-<p role="status">Current count: @currentCount</p>
+<p>This is where you can see all staff currently employed 
+    and whether they are currently active and available to be added to the rota.</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button class="btn btn-primary">Add Staff</button>
 
-@code {
-    private int currentCount = 0;
+<h2>Current Staff</h2>
 
-    private void IncrementCount()
-    {
-        currentCount++;
-    }
-}
