@@ -57,6 +57,25 @@
             }
         </div>
 
+        <div class="mb-3">
+            <label class="form-label" for="endTime">End Time</label>
+            @if (availableEndTimes.Any())
+            {
+                <select id="endTime" class="form-select" @bind="newEndTime">
+                    <option value="">Select an end time</option>
+                    @foreach (var time in availableEndTimes)
+                    {
+                        <option value="@time">@time</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="endTime" class="form-control" type="time" value="@newEndTime" @onchange="OnEndTimeChanged" />
+                <div class="form-text">No configured weekly end times found yet.</div>
+            }
+        </div>
+
         <button class="btn btn-primary" @onclick="SaveStaff">Save</button>
     </div>
 }
@@ -100,10 +119,18 @@ else
     private string newStaffName = "";
     private bool newIsManager = false;
     private string newStartTime = "";
+
+    private string newEndTime = "";
+
     private List<string> newWorkingDays = new();
     private List<StaffInput> staffList = new();
     private StartTimeRequirements weeklyStartTimes = new();
     private List<string> availableStartTimes = new();
+    
+    private EndTimeRequirements weeklyEndTimes = new();
+
+    private List<string> availableEndTimes = new();
+
     private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
     void ShowInput()
@@ -162,6 +189,11 @@ else
         newStartTime = e?.Value?.ToString() ?? string.Empty;
     }
 
+    void OnEndTimeChanged(ChangeEventArgs e)
+    {
+        newEndTime = e?.Value?.ToString() ?? string.Empty;
+    }
+
     async Task ToggleAvailability(ChangeEventArgs e, StaffInput staff)
     {
         if (e?.Value is bool boolValue)
@@ -208,6 +240,14 @@ else
             .ToList();
     }
 
+    private static List<string> BuildEndTimeOptions(EndTimeRequirements endTimes)
+    {
+        return endTimes.EndTimes
+            .Select(t => t.ToString("HH:mm"))
+            .Distinct()
+            .ToList();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -225,6 +265,13 @@ else
                 {
                     weeklyStartTimes = savedStartTimes;
                     availableStartTimes = BuildStartTimeOptions(savedStartTimes);
+                }
+
+                var savedEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements");
+                if (savedEndTimes != null)                
+                {
+                    weeklyEndTimes = savedEndTimes;
+                    availableEndTimes = BuildEndTimeOptions(savedEndTimes);
                 }
 
                 StateHasChanged();
