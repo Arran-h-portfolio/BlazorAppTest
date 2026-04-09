@@ -5,18 +5,31 @@ namespace DayRequirements.Models
     // on the day requirements page
     public class DayRequirements
     {
-        public required string Monday { get; set; }
+        public required int Monday { get; set; }
 
-        public required string Tuesday { get; set; }
+        public required int Tuesday { get; set; }
 
-        public required string Wednesday { get; set; }
+        public required int Wednesday { get; set; }
 
-        public required string Thursday { get; set; }
+        public required int Thursday { get; set; }
 
-        public required string Friday { get; set; }
+        public required int Friday { get; set; }
 
-        public required string Saturday { get; set; }
+        public required int Saturday { get; set; }
 
-        public required string Sunday { get; set; }
+        public required int Sunday { get; set; }
+    }
+
+
+// Below will be used to set start time requirements for each day of the week.
+    public class StartTimeRequirements
+    {
+        public int First { get; set; }
+
+        public int Second { get; set; }
+
+        public int Third { get; set; }
+
+        public int Fourth { get; set; }
     }
 }
