@@ -66,6 +66,29 @@
             </div>
         </div>
     </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2>Available end times</h2>
+                <p class="text-muted">Add or remove end-time slots that will appear as options in the staff add form.</p>
+                @if (weeklyEndTimes.EndTimes.Any())
+                {
+                    @foreach (var (time, index) in weeklyEndTimes.EndTimes.Select((t, i) => (t, i)))
+                    {
+                        <div class="input-group mb-2">
+                            <input type="time" class="form-control" @bind="weeklyEndTimes.EndTimes[index]" />
+                            <button class="btn btn-outline-danger" type="button" @onclick="@(() => RemoveEndTime(index))">Remove</button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No end times added yet.</p>
+                }
+                <button class="btn btn-secondary" @onclick="AddEndTime">Add end time</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save preferences</button>
@@ -104,14 +127,24 @@
                 weeklyStartTimes = savedStartTimes;
             }
 
+            var savedEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements");
+            if (savedEndTimes != null)            
+            {
+                weeklyEndTimes = savedEndTimes;
+            }
+
             StateHasChanged();
         }
     }
+
+    private EndTimeRequirements weeklyEndTimes = new EndTimeRequirements();
+
 
     async Task SaveWeeklyPrefs()
     {
         await localStorage.SetItemAsync("weeklyDayRequirements", weeklyRequirements);
         await localStorage.SetItemAsync("startTimeRequirements", weeklyStartTimes);
+        await localStorage.SetItemAsync("endTimeRequirements", weeklyEndTimes);
         saveMessage = "Weekly preferences saved locally.";
     }
 
@@ -120,11 +153,24 @@
         weeklyStartTimes.StartTimes.Add(new TimeOnly(9, 0));
     }
 
+    void AddEndTime()
+    {
+        weeklyEndTimes.EndTimes.Add(new TimeOnly(17, 0));
+    }
+
     void RemoveStartTime(int index)
     {
         if (index >= 0 && index < weeklyStartTimes.StartTimes.Count)
         {
             weeklyStartTimes.StartTimes.RemoveAt(index);
+        }
+    }
+
+    void RemoveEndTime(int index)
+    {
+        if (index >= 0 && index < weeklyEndTimes.EndTimes.Count)
+        {
+            weeklyEndTimes.EndTimes.RemoveAt(index);
         }
     }
 
