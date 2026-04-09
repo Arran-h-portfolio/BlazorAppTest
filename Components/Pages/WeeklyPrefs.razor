@@ -69,6 +69,21 @@
     <div class="col-md-6">
         <div class="card mb-3">
             <div class="card-body">
+                <h2>Daily opening times</h2>
+                <p class="text-muted">Set the opening time for each day of the week.</p>
+                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
+                {
+                    <div class="mb-2">
+                        <label class="form-label" for="opentime_@day">@day</label>
+                        <input id="opentime_@day" type="time" class="form-control" @bind="dailyOpeningTimes.StartTimesByDay[day]" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-body">
                 <h2>Available end times</h2>
                 <p class="text-muted">Add or remove end-time slots that will appear as options in the staff add form.</p>
                 @if (weeklyEndTimes.EndTimes.Any())
@@ -112,6 +127,41 @@
             </div>
         </div>
     </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2>Daily job role requirements</h2>
+                <p class="text-muted">Select which job roles are required for each day of the week.</p>
+                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block">@day</label>
+                        @if (weeklyJobRoles.JobRoles.Any())
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="@($"allroles_{day}")" checked="@AreAllJobRolesSelected(day)" @onchange="@(e => ToggleAllDayJobRoles(e, day))" />
+                                <label class="form-check-label fw-semibold" for="@($"allroles_{day}")">All job roles required</label>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var role in weeklyJobRoles.JobRoles)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="@($"dayrole_{day}_{role}")" checked="@dailyJobRoles.JobRolesByDay[day].Contains(role)" @onchange="@(e => ToggleDayJobRole(e, day, role))" />
+                                        <label class="form-check-label" for="@($"dayrole_{day}_{role}")">@role</label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted small">No job roles configured yet.</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
 <button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save preferences</button>
@@ -134,6 +184,8 @@
     private StartTimeRequirements weeklyStartTimes = new StartTimeRequirements();
     private EndTimeRequirements weeklyEndTimes = new EndTimeRequirements();
     private JobRoleRequirements weeklyJobRoles = new JobRoleRequirements();
+    private DaySpecificStartTimes dailyOpeningTimes = new DaySpecificStartTimes();
+    private DaySpecificJobRoles dailyJobRoles = new DaySpecificJobRoles();
     private string saveMessage = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -164,6 +216,18 @@
                 weeklyJobRoles = savedJobRoles;
             }
 
+            var savedDailyOpeningTimes = await localStorage.GetItemAsync<DaySpecificStartTimes>("daySpecificStartTimes");
+            if (savedDailyOpeningTimes != null)
+            {
+                dailyOpeningTimes = savedDailyOpeningTimes;
+            }
+
+            var savedDailyJobRoles = await localStorage.GetItemAsync<DaySpecificJobRoles>("daySpecificJobRoles");
+            if (savedDailyJobRoles != null)
+            {
+                dailyJobRoles = savedDailyJobRoles;
+            }
+
             StateHasChanged();
         }
     }
@@ -174,6 +238,8 @@
         await localStorage.SetItemAsync("startTimeRequirements", weeklyStartTimes);
         await localStorage.SetItemAsync("endTimeRequirements", weeklyEndTimes);
         await localStorage.SetItemAsync("jobRoleRequirements", weeklyJobRoles);
+        await localStorage.SetItemAsync("daySpecificStartTimes", dailyOpeningTimes);
+        await localStorage.SetItemAsync("daySpecificJobRoles", dailyJobRoles);
         saveMessage = "Weekly preferences saved locally.";
     }
 
@@ -214,6 +280,43 @@
         {
             weeklyJobRoles.JobRoles.RemoveAt(index);
         }
+    }
+
+    void ToggleDayJobRole(ChangeEventArgs e, string day, string role)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        if (isChecked)
+        {
+            if (!dailyJobRoles.JobRolesByDay[day].Contains(role))
+            {
+                dailyJobRoles.JobRolesByDay[day].Add(role);
+            }
+        }
+        else
+        {
+            dailyJobRoles.JobRolesByDay[day].Remove(role);
+        }
+    }
+
+    void ToggleAllDayJobRoles(ChangeEventArgs e, string day)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        dailyJobRoles.JobRolesByDay[day].Clear();
+
+        if (isChecked)
+        {
+            dailyJobRoles.JobRolesByDay[day].AddRange(weeklyJobRoles.JobRoles.Distinct());
+        }
+    }
+
+    bool AreAllJobRolesSelected(string day)
+    {
+        return weeklyJobRoles.JobRoles.Any()
+            && weeklyJobRoles.JobRoles.All(role => dailyJobRoles.JobRolesByDay[day].Contains(role));
     }
 
     private static string FormatTime(TimeOnly? time)

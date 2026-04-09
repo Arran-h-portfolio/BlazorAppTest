@@ -1,2 +1,722 @@
 @page "/rotaGenerator"
 @rendermode InteractiveServer
+@using DayRequirements.Models
+@using StaffInput.Models
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime JS
+
+<style>
+    @@media print {
+        @@page {
+            size: A4 landscape;
+            margin: 0.35cm;
+        }
+
+        html,
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 10px;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        body * {
+            visibility: hidden;
+        }
+
+        #rotaPrintArea,
+        #rotaPrintArea * {
+            visibility: visible;
+        }
+
+        #rotaPrintArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        #rotaPrintArea .table {
+            width: 100% !important;
+            table-layout: fixed;
+            font-size: 9px;
+            margin-bottom: 0;
+        }
+
+        #rotaPrintArea th,
+        #rotaPrintArea td {
+            padding: 0.15rem !important;
+            vertical-align: top;
+            line-height: 1.15;
+            word-break: break-word;
+        }
+
+        #rotaPrintArea .fw-semibold {
+            font-weight: 600 !important;
+        }
+
+        #rotaPrintArea .mb-1 {
+            margin-bottom: 0.1rem !important;
+        }
+
+        #rotaPrintArea table,
+        #rotaPrintArea tr,
+        #rotaPrintArea td,
+        #rotaPrintArea th {
+            page-break-inside: avoid !important;
+        }
+    }
+</style>
+
+<PageTitle>Rota Generator</PageTitle>
+
+<h1>Rota Generator</h1>
+
+<p>Generate a weekly rota using the saved staff list, day requirements, opening times, and job-role rules.</p>
+
+<div class="d-flex flex-wrap gap-2 mb-3 no-print">
+    <button class="btn btn-primary" @onclick="GenerateRota" disabled="@isLoading">Generate rota</button>
+    <button class="btn btn-outline-secondary" @onclick="LoadSavedData" disabled="@isLoading">Refresh saved data</button>
+    <button class="btn btn-success" @onclick="SaveGeneratedRota" disabled="@(!generatedRows.Any() || isLoading)">Save rota</button>
+    <button class="btn btn-outline-primary" @onclick="ToggleEditMode" disabled="@(!generatedRows.Any())">@(isEditMode ? "Done editing" : "Edit rota")</button>
+    <button class="btn btn-outline-dark" @onclick="AddManualRow" disabled="@isLoading">Add manual row</button>
+    <button class="btn btn-outline-danger" @onclick="ExportToPdf" disabled="@(!generatedRows.Any())">Export to PDF</button>
+</div>
+
+<div class="row g-3 mb-3 no-print">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">Active staff</h2>
+                <p class="display-6 mb-0">@staffList.Count(s => s.IsActive)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">Required weekly slots</h2>
+                <p class="display-6 mb-0">@GetTotalRequiredSlots()</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">Generated assignments</h2>
+                <p class="display-6 mb-0">@generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-info" role="alert">@statusMessage</div>
+}
+
+@if (coverageWarnings.Any())
+{
+    <div class="alert alert-warning no-print" role="alert">
+        <strong>Coverage notes:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach (var warning in coverageWarnings)
+            {
+                <li>@warning</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (generatedRows.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <h2>Generated Weekly Rota</h2>
+            <div id="rotaPrintArea" class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Staff name</th>
+                            @foreach (var day in WeekDays)
+                            {
+                                <th>@day</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var staffName in GetDisplayedStaffNames())
+                        {
+                            <tr>
+                                <td class="fw-semibold @(staffName == "Unfilled" ? "text-danger" : string.Empty)">@staffName</td>
+                                @foreach (var day in WeekDays)
+                                {
+                                    var cellRows = GetRowsForStaffAndDay(staffName, day).ToList();
+                                    <td class="@(staffName == "Unfilled" && cellRows.Any() ? "table-warning" : string.Empty)">
+                                        @if (cellRows.Any())
+                                        {
+                                            @foreach (var assignment in cellRows)
+                                            {
+                                                <div class="mb-1">@FormatTimeRange(assignment)</div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (isEditMode)
+            {
+                <div class="mt-4 no-print">
+                    <h3 class="h5">Edit assignments</h3>
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Name</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in generatedRows)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (row.StaffName != "No staff required")
+                                        {
+                                            <select class="form-select" @bind="row.Day">
+                                                @foreach (var day in WeekDays)
+                                                {
+                                                    <option value="@day">@day</option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            @row.Day
+                                        }
+                                    </td>
+                                    <td class="@(row.StaffName == "Unfilled" ? "text-danger fw-semibold" : string.Empty)">
+                                        @if (row.StaffName != "No staff required")
+                                        {
+                                            <select class="form-select" value="@row.EmployeeID" @onchange="@(e => UpdateAssignedStaff(e, row))">
+                                                <option value="">Unfilled</option>
+                                                @foreach (var staff in GetSelectableStaffForDay(row.Day))
+                                                {
+                                                    <option value="@staff.EmployeeID">@GetStaffOptionLabel(staff, row.Day)</option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            @row.StaffName
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (row.StaffName != "No staff required")
+                                        {
+                                            <input type="time" class="form-control" value="@row.StartTime" @onchange="@(e => row.StartTime = e.Value?.ToString() ?? string.Empty)" />
+                                        }
+                                        else
+                                        {
+                                            @row.StartTime
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (row.StaffName != "No staff required")
+                                        {
+                                            <input type="time" class="form-control" value="@row.EndTime" @onchange="@(e => row.EndTime = e.Value?.ToString() ?? string.Empty)" />
+                                        }
+                                        else
+                                        {
+                                            @row.EndTime
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (row.StaffName != "No staff required")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveRow(row))">Remove</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (!isLoading)
+{
+    <p class="text-muted">No rota generated yet. Click <strong>Generate rota</strong> to build the weekly table.</p>
+}
+
+@code {
+    private List<StaffInput> staffList = new();
+    private DayRequirements weeklyRequirements = CreateDefaultRequirements();
+    private DaySpecificStartTimes dailyOpeningTimes = new();
+    private EndTimeRequirements weeklyEndTimes = new();
+    private DaySpecificJobRoles dailyJobRoles = new();
+    private List<GeneratedRotaRow> generatedRows = new();
+    private List<string> coverageWarnings = new();
+    private bool isLoading = true;
+    private bool isEditMode = false;
+    private string statusMessage = string.Empty;
+
+    private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadSavedData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadSavedData()
+    {
+        isLoading = true;
+
+        try
+        {
+            staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
+            weeklyRequirements = await localStorage.GetItemAsync<DayRequirements>("weeklyDayRequirements") ?? CreateDefaultRequirements();
+            dailyOpeningTimes = await localStorage.GetItemAsync<DaySpecificStartTimes>("daySpecificStartTimes") ?? new DaySpecificStartTimes();
+            weeklyEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements") ?? new EndTimeRequirements();
+            dailyJobRoles = await localStorage.GetItemAsync<DaySpecificJobRoles>("daySpecificJobRoles") ?? new DaySpecificJobRoles();
+            generatedRows = await localStorage.GetItemAsync<List<GeneratedRotaRow>>("generatedRotaRows") ?? new List<GeneratedRotaRow>();
+
+            EnsureStaffAvailabilityKeys();
+            NormalizeGeneratedRows();
+            statusMessage = $"Loaded {staffList.Count(s => s.IsActive)} active staff members and {GetTotalRequiredSlots()} required weekly slots.";
+
+            if (generatedRows.Any())
+            {
+                statusMessage += $" A saved rota with {generatedRows.Count} rows is ready to review.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Unable to load saved rota data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void EnsureStaffAvailabilityKeys()
+    {
+        foreach (var staff in staffList)
+        {
+            staff.DailyAvailability ??= new Dictionary<string, bool>();
+
+            foreach (var day in WeekDays)
+            {
+                if (!staff.DailyAvailability.ContainsKey(day))
+                {
+                    staff.DailyAvailability[day] = false;
+                }
+            }
+        }
+    }
+
+    private async Task GenerateRota()
+    {
+        coverageWarnings.Clear();
+        generatedRows.Clear();
+        isEditMode = false;
+
+        var activeStaff = staffList.Where(s => s.IsActive).ToList();
+        if (!activeStaff.Any())
+        {
+            statusMessage = "No active staff found. Add staff in Staff Manager first.";
+            return;
+        }
+
+        var assignmentCounts = activeStaff.ToDictionary(s => s.EmployeeID, _ => 0);
+
+        foreach (var day in WeekDays)
+        {
+            var requiredCount = GetRequiredStaffForDay(day);
+            var dayRoles = dailyJobRoles.JobRolesByDay.TryGetValue(day, out var roles)
+                ? roles.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                : new List<string>();
+
+            if (requiredCount <= 0)
+            {
+                generatedRows.Add(new GeneratedRotaRow
+                {
+                    Day = day,
+                    StaffName = "No staff required",
+                    Role = "—",
+                    StartTime = "—",
+                    EndTime = "—"
+                });
+                continue;
+            }
+
+            var assignedIds = new HashSet<string>();
+            var dayRows = new List<GeneratedRotaRow>();
+            var availableForDay = activeStaff.Where(staff => IsStaffAvailableForDay(staff, day)).ToList();
+
+            foreach (var role in dayRoles)
+            {
+                if (dayRows.Count >= requiredCount)
+                {
+                    break;
+                }
+
+                var roleCandidate = PickBestCandidate(
+                    availableForDay.Where(staff => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase))),
+                    assignedIds,
+                    assignmentCounts);
+
+                if (roleCandidate is null)
+                {
+                    coverageWarnings.Add($"{day}: no available staff member found for required role '{role}'.");
+                    continue;
+                }
+
+                assignedIds.Add(roleCandidate.EmployeeID);
+                assignmentCounts[roleCandidate.EmployeeID]++;
+                dayRows.Add(BuildRotaRow(day, roleCandidate, role));
+            }
+
+            while (dayRows.Count < requiredCount)
+            {
+                var candidate = PickBestCandidate(availableForDay, assignedIds, assignmentCounts);
+                if (candidate is null)
+                {
+                    break;
+                }
+
+                assignedIds.Add(candidate.EmployeeID);
+                assignmentCounts[candidate.EmployeeID]++;
+                dayRows.Add(BuildRotaRow(day, candidate, ChooseDisplayRole(candidate, dayRoles)));
+            }
+
+            if (dayRows.Count < requiredCount)
+            {
+                coverageWarnings.Add($"{day}: only {dayRows.Count} of {requiredCount} required staff could be scheduled.");
+
+                while (dayRows.Count < requiredCount)
+                {
+                    dayRows.Add(new GeneratedRotaRow
+                    {
+                        Day = day,
+                        StaffName = "Unfilled",
+                        Role = dayRoles.ElementAtOrDefault(dayRows.Count) ?? "General",
+                        StartTime = GetOpeningTimeForDay(day).ToString("HH:mm"),
+                        EndTime = GetFallbackEndTime(GetOpeningTimeForDay(day)).ToString("HH:mm")
+                    });
+                }
+            }
+
+            generatedRows.AddRange(dayRows);
+        }
+
+        statusMessage = $"Rota generated with {generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")} staff assignments across the week.";
+    }
+
+    private StaffInput? PickBestCandidate(IEnumerable<StaffInput> candidates, HashSet<string> assignedIds, Dictionary<string, int> assignmentCounts)
+    {
+        return candidates
+            .Where(staff => !assignedIds.Contains(staff.EmployeeID))
+            .OrderBy(staff => assignmentCounts[staff.EmployeeID])
+            .ThenBy(staff => staff.IsManager)
+            .ThenBy(staff => staff.NewStaffName)
+            .FirstOrDefault();
+    }
+
+    private GeneratedRotaRow BuildRotaRow(string day, StaffInput staff, string role)
+    {
+        var startTime = GetAssignedStartTime(staff, day);
+        var endTime = GetAssignedEndTime(staff, startTime);
+
+        return new GeneratedRotaRow
+        {
+            Day = day,
+            EmployeeID = staff.EmployeeID,
+            StaffName = staff.NewStaffName,
+            Role = string.IsNullOrWhiteSpace(role) ? "General" : role,
+            StartTime = startTime.ToString("HH:mm"),
+            EndTime = endTime.ToString("HH:mm")
+        };
+    }
+
+    private async Task SaveGeneratedRota()
+    {
+        NormalizeGeneratedRows();
+        await localStorage.SetItemAsync("generatedRotaRows", generatedRows);
+        statusMessage = $"Saved {generatedRows.Count} rota rows locally.";
+    }
+
+    private async Task ExportToPdf()
+    {
+        await JS.InvokeVoidAsync("print");
+    }
+
+    private void ToggleEditMode()
+    {
+        isEditMode = !isEditMode;
+
+        if (isEditMode)
+        {
+            NormalizeGeneratedRows();
+        }
+    }
+
+    private void AddManualRow()
+    {
+        generatedRows.Add(new GeneratedRotaRow
+        {
+            Day = WeekDays[0],
+            StaffName = "Unfilled",
+            Role = "General",
+            StartTime = GetOpeningTimeForDay(WeekDays[0]).ToString("HH:mm"),
+            EndTime = GetFallbackEndTime(GetOpeningTimeForDay(WeekDays[0])).ToString("HH:mm")
+        });
+
+        isEditMode = true;
+    }
+
+    private void RemoveRow(GeneratedRotaRow row)
+    {
+        generatedRows.Remove(row);
+    }
+
+    private IEnumerable<string> GetDisplayedStaffNames()
+    {
+        return generatedRows
+            .Where(row => row.StaffName != "No staff required")
+            .Select(row => row.StaffName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .OrderBy(name => name == "Unfilled" ? 1 : 0)
+            .ThenBy(name => name);
+    }
+
+    private IEnumerable<GeneratedRotaRow> GetRowsForStaffAndDay(string staffName, string day)
+    {
+        return generatedRows
+            .Where(row => row.StaffName == staffName && row.Day == day && row.StaffName != "No staff required")
+            .OrderBy(row => TimeOnly.TryParse(row.StartTime, out var time) ? time : new TimeOnly(0, 0));
+    }
+
+    private static string FormatTimeRange(GeneratedRotaRow row)
+    {
+        var hasStart = !string.IsNullOrWhiteSpace(row.StartTime) && row.StartTime != "—";
+        var hasEnd = !string.IsNullOrWhiteSpace(row.EndTime) && row.EndTime != "—";
+
+        if (!hasStart && !hasEnd)
+        {
+            return "—";
+        }
+
+        if (hasStart && hasEnd)
+        {
+            return $"{row.StartTime} - {row.EndTime}";
+        }
+
+        return hasStart ? row.StartTime : row.EndTime;
+    }
+
+    private IEnumerable<StaffInput> GetSelectableStaffForDay(string day)
+    {
+        return staffList
+            .Where(s => s.IsActive)
+            .OrderByDescending(s => IsStaffAvailableForDay(s, day))
+            .ThenBy(s => s.NewStaffName);
+    }
+
+    private string GetStaffOptionLabel(StaffInput staff, string day)
+    {
+        return IsStaffAvailableForDay(staff, day)
+            ? staff.NewStaffName
+            : $"{staff.NewStaffName} (outside availability)";
+    }
+
+    private void UpdateAssignedStaff(ChangeEventArgs e, GeneratedRotaRow row)
+    {
+        row.EmployeeID = e?.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(row.EmployeeID))
+        {
+            row.StaffName = "Unfilled";
+            return;
+        }
+
+        var selectedStaff = staffList.FirstOrDefault(staff => staff.EmployeeID == row.EmployeeID);
+        if (selectedStaff == null)
+        {
+            row.StaffName = "Unfilled";
+            row.EmployeeID = string.Empty;
+            return;
+        }
+
+        row.StaffName = selectedStaff.NewStaffName;
+        row.Role = selectedStaff.JobRoles.FirstOrDefault() ?? row.Role;
+
+        var startTime = GetAssignedStartTime(selectedStaff, row.Day);
+        row.StartTime = startTime.ToString("HH:mm");
+        row.EndTime = GetAssignedEndTime(selectedStaff, startTime).ToString("HH:mm");
+    }
+
+    private void NormalizeGeneratedRows()
+    {
+        foreach (var row in generatedRows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.StaffName) && row.StaffName != "Unfilled" && row.StaffName != "No staff required" && string.IsNullOrWhiteSpace(row.EmployeeID))
+            {
+                row.EmployeeID = staffList.FirstOrDefault(staff => staff.NewStaffName == row.StaffName)?.EmployeeID ?? string.Empty;
+            }
+
+            if (row.StaffName != "No staff required")
+            {
+                if (!TimeOnly.TryParse(row.StartTime, out _))
+                {
+                    row.StartTime = GetOpeningTimeForDay(row.Day).ToString("HH:mm");
+                }
+
+                if (!TimeOnly.TryParse(row.EndTime, out _))
+                {
+                    var parsedStart = TimeOnly.TryParse(row.StartTime, out var start) ? start : GetOpeningTimeForDay(row.Day);
+                    row.EndTime = GetFallbackEndTime(parsedStart).ToString("HH:mm");
+                }
+            }
+        }
+    }
+
+    private bool IsStaffAvailableForDay(StaffInput staff, string day)
+    {
+        if (staff.DailyAvailability.TryGetValue(day, out var available) && available)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(staff.WorkingDays))
+        {
+            return false;
+        }
+
+        return staff.WorkingDays
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Any(savedDay => string.Equals(savedDay, day, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private TimeOnly GetAssignedStartTime(StaffInput staff, string day)
+    {
+        var openingTime = GetOpeningTimeForDay(day);
+
+        if (TimeOnly.TryParse(staff.StartTime, out var staffStartTime) && staffStartTime > openingTime)
+        {
+            return staffStartTime;
+        }
+
+        return openingTime;
+    }
+
+    private TimeOnly GetAssignedEndTime(StaffInput staff, TimeOnly startTime)
+    {
+        if (TimeOnly.TryParse(staff.EndTime, out var staffEndTime) && staffEndTime > startTime)
+        {
+            return staffEndTime;
+        }
+
+        return GetFallbackEndTime(startTime);
+    }
+
+    private TimeOnly GetFallbackEndTime(TimeOnly startTime)
+    {
+        if (weeklyEndTimes.EndTimes.Any())
+        {
+            var configuredEndTime = weeklyEndTimes.EndTimes.OrderByDescending(time => time).First();
+            if (configuredEndTime > startTime)
+            {
+                return configuredEndTime;
+            }
+        }
+
+        return startTime.Add(TimeSpan.FromHours(8));
+    }
+
+    private TimeOnly GetOpeningTimeForDay(string day)
+    {
+        if (dailyOpeningTimes.StartTimesByDay.TryGetValue(day, out var openingTime))
+        {
+            return openingTime;
+        }
+
+        return new TimeOnly(9, 0);
+    }
+
+    private string ChooseDisplayRole(StaffInput staff, IEnumerable<string> dayRoles)
+    {
+        var matchingRole = dayRoles.FirstOrDefault(role => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase)));
+        if (!string.IsNullOrWhiteSpace(matchingRole))
+        {
+            return matchingRole;
+        }
+
+        return staff.JobRoles.FirstOrDefault() ?? "General";
+    }
+
+    private int GetRequiredStaffForDay(string day)
+    {
+        return day switch
+        {
+            "Monday" => weeklyRequirements.Monday,
+            "Tuesday" => weeklyRequirements.Tuesday,
+            "Wednesday" => weeklyRequirements.Wednesday,
+            "Thursday" => weeklyRequirements.Thursday,
+            "Friday" => weeklyRequirements.Friday,
+            "Saturday" => weeklyRequirements.Saturday,
+            "Sunday" => weeklyRequirements.Sunday,
+            _ => 0
+        };
+    }
+
+    private int GetTotalRequiredSlots()
+    {
+        return WeekDays.Sum(GetRequiredStaffForDay);
+    }
+
+    private static DayRequirements CreateDefaultRequirements()
+    {
+        return new DayRequirements
+        {
+            Monday = 0,
+            Tuesday = 0,
+            Wednesday = 0,
+            Thursday = 0,
+            Friday = 0,
+            Saturday = 0,
+            Sunday = 0
+        };
+    }
+
+    public class GeneratedRotaRow
+    {
+        public string Day { get; set; } = string.Empty;
+        public string EmployeeID { get; set; } = string.Empty;
+        public string StaffName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+    }
+}

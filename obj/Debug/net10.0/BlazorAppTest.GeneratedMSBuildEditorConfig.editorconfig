@@ -34,16 +34,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ob3RGb3VuZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/arran/Desktop/Github-Repos/BlazorAppTest/Components/Pages/RotaEditor.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Sb3RhRWRpdG9yLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [/Users/arran/Desktop/Github-Repos/BlazorAppTest/Components/Pages/RotaGenerator.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Sb3RhR2VuZXJhdG9yLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[/Users/arran/Desktop/Github-Repos/BlazorAppTest/Components/Pages/RotaPDFExport.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Sb3RhUERGRXhwb3J0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/arran/Desktop/Github-Repos/BlazorAppTest/Components/Pages/StaffManager.razor]
