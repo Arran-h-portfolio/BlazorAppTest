@@ -1,7 +1,9 @@
 ﻿@page "/StaffManager" //This is a reference to the href name in the NavMenu.razor file
 @rendermode InteractiveServer
+@using DayRequirements.Models
+@using StaffInput.Models
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
-
+@inject IJSRuntime JS
 
 
 <PageTitle>Staff Manager</PageTitle>
@@ -15,30 +17,95 @@
 
 @if (showInput)
 {
-    <div class="input-container">
-        <input @bind="newStaffName" placeholder="Enter Staff Name" />
+    <div class="input-container mb-3">
+        <input class="form-control mb-2" @bind="newStaffName" placeholder="Enter Staff Name" />
+
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="isManager" @bind="newIsManager" />
+            <label class="form-check-label" for="isManager">Manager</label>
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Working Days</label>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var day in WeekDays)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="day_@day" checked="@newWorkingDays.Contains(day)" @onchange="@(e => ToggleDay(e, day))" />
+                        <label class="form-check-label" for="day_@day">@day</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="startTime">Start Time</label>
+            @if (availableStartTimes.Any())
+            {
+                <select id="startTime" class="form-select" @bind="newStartTime">
+                    <option value="">Select a start time</option>
+                    @foreach (var time in availableStartTimes)
+                    {
+                        <option value="@time">@time</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="startTime" class="form-control" type="time" value="@newStartTime" @onchange="OnStartTimeChanged" />
+                <div class="form-text">No configured weekly start times found yet.</div>
+            }
+        </div>
+
         <button class="btn btn-primary" @onclick="SaveStaff">Save</button>
     </div>
 }
 
 <h2>Current Staff</h2>
 
-<ul>
-    @foreach (var staff in staffList)
-    {
-        <li>@staff</li>
-    }
-</ul>
-
-
-
+@if (!staffList.Any())
+{
+    <p>No staff have been added yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Available this week</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var staff in staffList)
+            {
+                <tr>
+                    <td>@staff.NewStaffName</td>
+                    <td>
+                        <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteStaffWithConfirmation(staff))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code 
 {
     private bool showInput = false;
     private string newStaffName = "";
-    private List<string> staffList = new();
-    
+    private bool newIsManager = false;
+    private string newStartTime = "";
+    private List<string> newWorkingDays = new();
+    private List<StaffInput> staffList = new();
+    private StartTimeRequirements weeklyStartTimes = new();
+    private List<string> availableStartTimes = new();
+    private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
     void ShowInput()
     {
         showInput = true;
@@ -49,24 +116,125 @@
     {
         if (!string.IsNullOrWhiteSpace(newStaffName))
         {
-            staffList.Add(newStaffName);
-            await localStorage.SetItemAsync("stafflist", staffList);
-            newStaffName = "";
+            var newStaff = new StaffInput
+            {
+                EmployeeID = Guid.NewGuid().ToString(),
+                NewStaffName = newStaffName.Trim(),
+                LastNameInitial = string.Empty,
+                IsManager = newIsManager,
+                WorkingDays = string.Join(", ", newWorkingDays),
+                StartTime = newStartTime,
+                EndTime = string.Empty,
+                IsActive = true,
+                IsAvailableThisWeek = false
+            };
+
+            staffList.Add(newStaff);
+            await SaveStaffListAsync();
+            newStaffName = string.Empty;
+            newIsManager = false;
+            newStartTime = string.Empty;
+            newWorkingDays.Clear();
             showInput = false;
         }
+    }
+
+    void ToggleDay(ChangeEventArgs e, string day)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        if (isChecked)
+        {
+            if (!newWorkingDays.Contains(day))
+            {
+                newWorkingDays.Add(day);
+            }
+        }
+        else
+        {
+            newWorkingDays.Remove(day);
+        }
+    }
+
+    void OnStartTimeChanged(ChangeEventArgs e)
+    {
+        newStartTime = e?.Value?.ToString() ?? string.Empty;
+    }
+
+    async Task ToggleAvailability(ChangeEventArgs e, StaffInput staff)
+    {
+        if (e?.Value is bool boolValue)
+        {
+            staff.IsAvailableThisWeek = boolValue;
+        }
+        else if (e?.Value is string stringValue)
+        {
+            staff.IsAvailableThisWeek = stringValue == "true" || stringValue == "on";
+        }
+        else
+        {
+            staff.IsAvailableThisWeek = false;
+        }
+
+        await SaveStaffListAsync();
+    }
+
+    async Task DeleteStaff(StaffInput staff)
+    {
+        staffList.Remove(staff);
+        await SaveStaffListAsync();
+    }
+
+    async Task DeleteStaffWithConfirmation(StaffInput staff)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {staff.NewStaffName}?");
+        if (confirmed)
+        {
+            await DeleteStaff(staff);
+        }
+    }
+
+    async Task SaveStaffListAsync()
+    {
+        await localStorage.SetItemAsync("stafflist", staffList);
+    }
+
+    private static List<string> BuildStartTimeOptions(StartTimeRequirements startTimes)
+    {
+        return startTimes.StartTimes
+            .Select(t => t.ToString("HH:mm"))
+            .Distinct()
+            .ToList();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var data = await localStorage.GetItemAsync<List<string>>("stafflist");
-            if (data != null)
+            try
             {
-                staffList = data;
+                var data = await localStorage.GetItemAsync<List<StaffInput>>("stafflist");
+                if (data != null)
+                {
+                    staffList = data;
+                }
+
+                var savedStartTimes = await localStorage.GetItemAsync<StartTimeRequirements>("startTimeRequirements");
+                if (savedStartTimes != null)
+                {
+                    weeklyStartTimes = savedStartTimes;
+                    availableStartTimes = BuildStartTimeOptions(savedStartTimes);
+                }
+
                 StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"StaffManager load error: {ex.Message}");
+                await localStorage.RemoveItemAsync("stafflist");
+                staffList = new List<StaffInput>();
             }
         }
     }
 }
-

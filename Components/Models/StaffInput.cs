@@ -10,7 +10,7 @@ namespace StaffInput.Models
         
         public required string LastNameInitial { get; set; }
 
-        public required string Position { get; set; }
+        public required bool IsManager { get; set; }
 
         public required string WorkingDays { get; set; }
 
@@ -19,5 +19,7 @@ namespace StaffInput.Models
         public required string EndTime { get; set; }
 
         public required bool IsActive { get; set; }
+
+        public bool IsAvailableThisWeek { get; set; }
     }
 }

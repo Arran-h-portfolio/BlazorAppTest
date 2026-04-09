@@ -24,12 +24,6 @@ namespace DayRequirements.Models
 // Below will be used to set start time requirements for each day of the week.
     public class StartTimeRequirements
     {
-        public int First { get; set; }
-
-        public int Second { get; set; }
-
-        public int Third { get; set; }
-
-        public int Fourth { get; set; }
+        public List<TimeOnly> StartTimes { get; set; } = new();
     }
 }
