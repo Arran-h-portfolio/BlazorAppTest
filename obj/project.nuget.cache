@@ -7,15 +7,5 @@
     "/Users/arran/.nuget/packages/blazored.localstorage/4.5.0/blazored.localstorage.4.5.0.nupkg.sha512",
     "/Users/arran/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.5/microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "message": "Problem reading the cache file /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
-      "projectPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/BlazorAppTest.csproj",
-      "warningLevel": 1,
-      "filePath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/BlazorAppTest.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }
