@@ -89,6 +89,29 @@
             </div>
         </div>
     </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2>Available job roles</h2>
+                <p class="text-muted">Add or remove job roles that staff members can be assigned to.</p>
+                @if (weeklyJobRoles.JobRoles.Any())
+                {
+                    @foreach (var (role, index) in weeklyJobRoles.JobRoles.Select((r, i) => (r, i)))
+                    {
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" placeholder="Job Role" @bind="weeklyJobRoles.JobRoles[index]" />
+                            <button class="btn btn-outline-danger" type="button" @onclick="@(() => RemoveJobRole(index))">Remove</button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No job roles added yet.</p>
+                }
+                <button class="btn btn-secondary" @onclick="AddJobRole">Add job role</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save preferences</button>
@@ -109,6 +132,8 @@
         Sunday = 0
     };
     private StartTimeRequirements weeklyStartTimes = new StartTimeRequirements();
+    private EndTimeRequirements weeklyEndTimes = new EndTimeRequirements();
+    private JobRoleRequirements weeklyJobRoles = new JobRoleRequirements();
     private string saveMessage = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -133,18 +158,22 @@
                 weeklyEndTimes = savedEndTimes;
             }
 
+            var savedJobRoles = await localStorage.GetItemAsync<JobRoleRequirements>("jobRoleRequirements");
+            if (savedJobRoles != null)
+            {
+                weeklyJobRoles = savedJobRoles;
+            }
+
             StateHasChanged();
         }
     }
-
-    private EndTimeRequirements weeklyEndTimes = new EndTimeRequirements();
-
 
     async Task SaveWeeklyPrefs()
     {
         await localStorage.SetItemAsync("weeklyDayRequirements", weeklyRequirements);
         await localStorage.SetItemAsync("startTimeRequirements", weeklyStartTimes);
         await localStorage.SetItemAsync("endTimeRequirements", weeklyEndTimes);
+        await localStorage.SetItemAsync("jobRoleRequirements", weeklyJobRoles);
         saveMessage = "Weekly preferences saved locally.";
     }
 
@@ -156,6 +185,11 @@
     void AddEndTime()
     {
         weeklyEndTimes.EndTimes.Add(new TimeOnly(17, 0));
+    }
+
+    void AddJobRole()
+    {
+        weeklyJobRoles.JobRoles.Add("New Role");
     }
 
     void RemoveStartTime(int index)
@@ -171,6 +205,14 @@
         if (index >= 0 && index < weeklyEndTimes.EndTimes.Count)
         {
             weeklyEndTimes.EndTimes.RemoveAt(index);
+        }
+    }
+
+    void RemoveJobRole(int index)
+    {
+        if (index >= 0 && index < weeklyJobRoles.JobRoles.Count)
+        {
+            weeklyJobRoles.JobRoles.RemoveAt(index);
         }
     }
 

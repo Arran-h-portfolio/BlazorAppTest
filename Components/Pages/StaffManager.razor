@@ -76,7 +76,45 @@
             }
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">Job Roles</label>
+            @if (availableJobRoles.Any())
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var role in availableJobRoles)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="role_@role" checked="@newJobRoles.Contains(role)" @onchange="@(e => ToggleJobRole(e, role))" />
+                            <label class="form-check-label" for="role_@role">@role</label>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="form-text">No job roles configured yet. Configure them in Weekly Preferences.</div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Weekly Availability</label>
+            <div class="mb-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="SetAllDaysAvailable">Set All Days Available</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearAllDays">Clear All Days</button>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var day in WeekDays)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="avail_@day" checked="@newDailyAvailability[day]" @onchange="@(e => ToggleDayAvailability(e, day))" />
+                        <label class="form-check-label" for="avail_@day">@day</label>
+                    </div>
+                }
+            </div>
+        </div>
+
         <button class="btn btn-primary" @onclick="SaveStaff">Save</button>
+        <button class="btn btn-secondary" @onclick="CancelAddStaff">Cancel</button>
     </div>
 }
 
@@ -92,6 +130,8 @@ else
         <thead>
             <tr>
                 <th>Name</th>
+                <th>Job Roles</th>
+                <th>Available Days</th>
                 <th>Available this week</th>
                 <th>Actions</th>
             </tr>
@@ -101,6 +141,33 @@ else
             {
                 <tr>
                     <td>@staff.NewStaffName</td>
+                    <td>
+                        @if (staff.JobRoles.Any())
+                        {
+                            <span class="badge bg-info">@string.Join(", ", staff.JobRoles)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No roles assigned</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var availableDays = staff.DailyAvailability
+                                .Where(x => x.Value)
+                                .Select(x => GetDayAbbreviation(x.Key))
+                                .ToList();
+                        }
+                        @if (availableDays.Any())
+                        {
+                            <span class="badge bg-success">@string.Join(", ", availableDays)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No days available</span>
+                        }
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="@(() => ShowEditAvailability(staff))">Edit</button>
+                    </td>
                     <td>
                         <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
                     </td>
@@ -113,6 +180,39 @@ else
     </table>
 }
 
+@if (showEditAvailability && editingStaff != null)
+{
+    <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Weekly Availability - @editingStaff.NewStaffName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditAvailability"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-2" @onclick="SetEditDaysAllAvailable">Set All Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearEditDays">Clear All Days</button>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var day in WeekDays)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_avail_@day" checked="@editingStaff.DailyAvailability[day]" @onchange="@(e => ToggleEditDayAvailability(e, day))" />
+                                <label class="form-check-label" for="edit_avail_@day">@day</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditAvailability">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEditAvailability">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code 
 {
     private bool showInput = false;
@@ -123,6 +223,17 @@ else
     private string newEndTime = "";
 
     private List<string> newWorkingDays = new();
+    private List<string> newJobRoles = new();
+    private Dictionary<string, bool> newDailyAvailability = new()
+    {
+        { "Monday", false },
+        { "Tuesday", false },
+        { "Wednesday", false },
+        { "Thursday", false },
+        { "Friday", false },
+        { "Saturday", false },
+        { "Sunday", false }
+    };
     private List<StaffInput> staffList = new();
     private StartTimeRequirements weeklyStartTimes = new();
     private List<string> availableStartTimes = new();
@@ -130,6 +241,11 @@ else
     private EndTimeRequirements weeklyEndTimes = new();
 
     private List<string> availableEndTimes = new();
+    private JobRoleRequirements weeklyJobRoles = new();
+    private List<string> availableJobRoles = new();
+
+    private bool showEditAvailability = false;
+    private StaffInput? editingStaff = null;
 
     private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
@@ -137,6 +253,26 @@ else
     {
         showInput = true;
         StateHasChanged();
+    }
+
+    void CancelAddStaff()
+    {
+        showInput = false;
+        ResetNewStaffForm();
+    }
+
+    void ResetNewStaffForm()
+    {
+        newStaffName = string.Empty;
+        newIsManager = false;
+        newStartTime = string.Empty;
+        newEndTime = string.Empty;
+        newWorkingDays.Clear();
+        newJobRoles.Clear();
+        foreach (var day in WeekDays)
+        {
+            newDailyAvailability[day] = false;
+        }
     }
 
     async Task SaveStaff()
@@ -151,17 +287,16 @@ else
                 IsManager = newIsManager,
                 WorkingDays = string.Join(", ", newWorkingDays),
                 StartTime = newStartTime,
-                EndTime = string.Empty,
+                EndTime = newEndTime,
                 IsActive = true,
-                IsAvailableThisWeek = false
+                IsAvailableThisWeek = false,
+                JobRoles = newJobRoles.ToList(),
+                DailyAvailability = new Dictionary<string, bool>(newDailyAvailability)
             };
 
             staffList.Add(newStaff);
             await SaveStaffListAsync();
-            newStaffName = string.Empty;
-            newIsManager = false;
-            newStartTime = string.Empty;
-            newWorkingDays.Clear();
+            ResetNewStaffForm();
             showInput = false;
         }
     }
@@ -184,6 +319,105 @@ else
         }
     }
 
+    void ToggleJobRole(ChangeEventArgs e, string role)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        if (isChecked)
+        {
+            if (!newJobRoles.Contains(role))
+            {
+                newJobRoles.Add(role);
+            }
+        }
+        else
+        {
+            newJobRoles.Remove(role);
+        }
+    }
+
+    void ToggleDayAvailability(ChangeEventArgs e, string day)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        newDailyAvailability[day] = isChecked;
+    }
+
+    void SetAllDaysAvailable()
+    {
+        foreach (var day in WeekDays)
+        {
+            newDailyAvailability[day] = true;
+        }
+        StateHasChanged();
+    }
+
+    void ClearAllDays()
+    {
+        foreach (var day in WeekDays)
+        {
+            newDailyAvailability[day] = false;
+        }
+        StateHasChanged();
+    }
+
+    void ShowEditAvailability(StaffInput staff)
+    {
+        editingStaff = staff;
+        showEditAvailability = true;
+        StateHasChanged();
+    }
+
+    void CloseEditAvailability()
+    {
+        showEditAvailability = false;
+        editingStaff = null;
+        StateHasChanged();
+    }
+
+    void ToggleEditDayAvailability(ChangeEventArgs e, string day)
+    {
+        if (editingStaff != null)
+        {
+            var isChecked = e?.Value is bool boolValue && boolValue
+                || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+            editingStaff.DailyAvailability[day] = isChecked;
+        }
+    }
+
+    void SetEditDaysAllAvailable()
+    {
+        if (editingStaff != null)
+        {
+            foreach (var day in WeekDays)
+            {
+                editingStaff.DailyAvailability[day] = true;
+            }
+            StateHasChanged();
+        }
+    }
+
+    void ClearEditDays()
+    {
+        if (editingStaff != null)
+        {
+            foreach (var day in WeekDays)
+            {
+                editingStaff.DailyAvailability[day] = false;
+            }
+            StateHasChanged();
+        }
+    }
+
+    async Task SaveEditAvailability()
+    {
+        await SaveStaffListAsync();
+        CloseEditAvailability();
+    }
+
     void OnStartTimeChanged(ChangeEventArgs e)
     {
         newStartTime = e?.Value?.ToString() ?? string.Empty;
@@ -196,17 +430,23 @@ else
 
     async Task ToggleAvailability(ChangeEventArgs e, StaffInput staff)
     {
+        bool isChecked = false;
+        
         if (e?.Value is bool boolValue)
         {
-            staff.IsAvailableThisWeek = boolValue;
+            isChecked = boolValue;
         }
         else if (e?.Value is string stringValue)
         {
-            staff.IsAvailableThisWeek = stringValue == "true" || stringValue == "on";
+            isChecked = stringValue == "true" || stringValue == "on";
         }
-        else
+
+        staff.IsAvailableThisWeek = isChecked;
+
+        // Override daily availability based on the "Available this week" checkbox
+        foreach (var day in WeekDays)
         {
-            staff.IsAvailableThisWeek = false;
+            staff.DailyAvailability[day] = isChecked;
         }
 
         await SaveStaffListAsync();
@@ -248,6 +488,11 @@ else
             .ToList();
     }
 
+    private static string GetDayAbbreviation(string day)
+    {
+        return day.Substring(0, 3); // Mon, Tue, Wed, etc.
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -272,6 +517,13 @@ else
                 {
                     weeklyEndTimes = savedEndTimes;
                     availableEndTimes = BuildEndTimeOptions(savedEndTimes);
+                }
+
+                var savedJobRoles = await localStorage.GetItemAsync<JobRoleRequirements>("jobRoleRequirements");
+                if (savedJobRoles != null)
+                {
+                    weeklyJobRoles = savedJobRoles;
+                    availableJobRoles = weeklyJobRoles.JobRoles.ToList();
                 }
 
                 StateHasChanged();

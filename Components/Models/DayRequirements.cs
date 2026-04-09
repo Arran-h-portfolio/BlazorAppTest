@@ -31,4 +31,9 @@ namespace DayRequirements.Models
     {
         public List<TimeOnly> EndTimes { get; set; } = new();
     }
+
+    public class JobRoleRequirements
+    {
+        public List<string> JobRoles { get; set; } = new();
+    }
 }

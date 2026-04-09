@@ -21,5 +21,24 @@ namespace StaffInput.Models
         public required bool IsActive { get; set; }
 
         public bool IsAvailableThisWeek { get; set; }
+
+        public List<string> JobRoles { get; set; } = new();
+
+        // Daily availability tracking - maps day name to availability status
+        public Dictionary<string, bool> DailyAvailability { get; set; } = new()
+        {
+            { "Monday", false },
+            { "Tuesday", false },
+            { "Wednesday", false },
+            { "Thursday", false },
+            { "Friday", false },
+            { "Saturday", false },
+            { "Sunday", false }
+        };
+    }
+
+    public class JobSkills
+    {
+        public List<string> Skills { get; set; } = new();
     }
 }
