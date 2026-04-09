@@ -1,7 +1,6 @@
 ﻿@page "/StaffManager" //This is a reference to the href name in the NavMenu.razor file
 @rendermode InteractiveServer
-@* @inject Blazored.LocalStorage.ILocalStorageService localStorage *@
-@inject IJSRuntime JS
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 
 
@@ -37,57 +36,37 @@
 @code 
 {
     private bool showInput = false;
-
-    private bool hasLoaded = false;
     private string newStaffName = "";
     private List<string> staffList = new();
     
     void ShowInput()
     {
         showInput = true;
-        @* StateHasChanged(); *@
+        StateHasChanged();
     }
-
-    @* Next method saves staff data to local storage *@
 
     async Task SaveStaff()
     {
         if (!string.IsNullOrWhiteSpace(newStaffName))
         {
             staffList.Add(newStaffName);
-            await JS.InvokeVoidAsync("saveData", "stafflist", staffList);
+            await localStorage.SetItemAsync("stafflist", staffList);
             newStaffName = "";
             showInput = false;
         }
     }
 
-    @* Following method loads that data onto the page *@
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try{
-            var data = await JS.InvokeAsync<List<string>>("getData", "stafflist");
+            var data = await localStorage.GetItemAsync<List<string>>("stafflist");
             if (data != null)
             {
                 staffList = data;
                 StateHasChanged();
             }
-            
-            if (!hasLoaded)
-            {
-                hasLoaded = true;
-                StateHasChanged();
-            }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"JS error: {ex.Message}");
-            }
-          
         }
-        
     }
 }
 
