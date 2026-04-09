@@ -26,4 +26,9 @@ namespace DayRequirements.Models
     {
         public List<TimeOnly> StartTimes { get; set; } = new();
     }
+
+    public class EndTimeRequirements
+    {
+        public List<TimeOnly> EndTimes { get; set; } = new();
+    }
 }
