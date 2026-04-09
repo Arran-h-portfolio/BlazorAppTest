@@ -1,10 +1,52 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+
 
 <PageTitle>Home</PageTitle>
 
-<h1>Home</h1>
-<h2>Welcome to the automated rota app</h2>
-<div style"display: flex; flex-direction: column; gap: 20px;">
-    <button class="btn btn-primary">Manage Staff</button>
-    <button class="btn btn-primary">Day Requirements</button>
-</div>
+<section class="hero">
+    <div class="hero-content">
+        <h1>RotaHub</h1>
+        <h2>
+           Smarter <span class="highlight">staff scheduling</span>, without the stress
+        </h2>
+
+        <p class="hero-subtext">
+            Automate your staff scheduling with a smarter, faster rota system. 
+            <ul class="items-list">
+                 <li>Manage your team</li>
+                 <li>Set availability</li>
+                 <li>Generate optimised rotas in seconds</li>
+            </ul>
+        </p>
+
+        <div class="hero-buttons">
+            <button class="btn-primary">Get Started</button>
+            <button class="btn-secondary">View Demo</button>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature-card">
+        <h3>👥 Staff Management</h3>
+        <p>Add and organise your team with ease.</p>
+    </div>
+
+    <div class="feature-card">
+        <h3>🕒 Availability Tracking</h3>
+        <p>Prevent conflicts before they happen.</p>
+    </div>
+
+    <div class="feature-card">
+        <h3>⚡ Auto Rota Generator</h3>
+        <p>Create optimised schedules instantly.</p>
+    </div>
+
+    <div class="feature-card">
+        <h3>✏️ Manual Editing</h3>
+        <p>Full control when you need it.</p>
+    </div>
+</section>
+
+<div><p class="trust-text">Trusted by teams to simplify scheduling</p></div>

@@ -23,7 +23,6 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/scopedcss/Components/Layout/ReconnectModal.razor.rz.scp.css
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/scopedcss/bundle/BlazorAppTest.styles.css
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/scopedcss/projectbundle/BlazorAppTest.bundle.scp.css
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-khy4lop6wu-khy4lop6wu.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/wpi176aeya-{0}-bqjiyaj88i-bqjiyaj88i.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/wvdhl1ej6r-{0}-c2jlpeoesf-c2jlpeoesf.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/exws4ohtuh-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -48,9 +47,7 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/sox0vsmpni-{0}-j5mq2jizvt-j5mq2jizvt.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/cie48w5tj3-{0}-06098lyss8-06098lyss8.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/ma8sm2viu8-{0}-nvvlpmu67g-nvvlpmu67g.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/ix2n2qthuo-{0}-s35ty4nyc5-s35ty4nyc5.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/bbrcwumf8o-{0}-pj5nd1wqec-pj5nd1wqec.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/hbis50t4is-{0}-46ein0sx1k-46ein0sx1k.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/oc0y8sb3nd-{0}-v0zj4ognzu-v0zj4ognzu.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/b2hspikn7b-{0}-37tfw0ft22-37tfw0ft22.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/wu45omxm2l-{0}-hrwsygsryq-hrwsygsryq.gz
@@ -71,8 +68,6 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/kpenalk7nq-{0}-abdmv1u4y3-abdmv1u4y3.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/xjh9egxr72-{0}-b9228eflpl-b9228eflpl.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/tmxukqcr64-{0}-2tj1sjhksk-2tj1sjhksk.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/h08u7j3p57-{0}-hf934r3z4c-hf934r3z4c.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/74v2vxv92g-{0}-hf934r3z4c-hf934r3z4c.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/staticwebassets.build.json
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/staticwebassets.build.json.cache
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/staticwebassets.development.json
@@ -84,3 +79,13 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.genruntimeconfig.cache
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/ref/BlazorAppTest.dll
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.sourcelink.json
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/ix2n2qthuo-{0}-s7ebnl7hpo-s7ebnl7hpo.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/hbis50t4is-{0}-1gc4ji7pvs-1gc4ji7pvs.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/scopedcss/Components/Pages/Home.razor.rz.scp.css
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/bin/Debug/net10.0/Blazored.LocalStorage.dll
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.csproj.AssemblyReference.cache
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/h08u7j3p57-{0}-e975ogawf9-e975ogawf9.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/74v2vxv92g-{0}-e975ogawf9-e975ogawf9.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAp.262F2729.Up2Date
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-rwvsaq883s-rwvsaq883s.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/l80f58wqe8-{0}-nvj3ek99dh-nvj3ek99dh.gz
