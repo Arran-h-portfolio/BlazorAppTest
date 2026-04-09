@@ -13,7 +13,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BlazorAppTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7594217c71fe71a361ddd561dc4310ede68edad6")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+111c2ff2576720e8390674bdca574c20dc2b1e87")]
+>>>>>>> development
 [assembly: System.Reflection.AssemblyProductAttribute("BlazorAppTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BlazorAppTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
