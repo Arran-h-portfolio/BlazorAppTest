@@ -1,0 +1,19 @@
+/* FEATURES */
+.features[b-uino8d4b71] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 40px;
+}
+
+.feature-card[b-uino8d4b71] {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  transition: 0.2s;
+}
+
+.feature-card:hover[b-uino8d4b71] {
+  transform: translateY(-4px);
+}
