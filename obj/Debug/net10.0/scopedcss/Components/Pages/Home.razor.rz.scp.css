@@ -4,16 +4,56 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
   padding: 40px;
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid #E2E8F0;
 }
 
 .feature-card[b-uino8d4b71] {
   background: white;
-  padding: 20px;
+  padding: 24px;
   border-radius: 10px;
   border: 1px solid #E2E8F0;
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 
 .feature-card:hover[b-uino8d4b71] {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.trust-text[b-uino8d4b71] {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #94a3bb;
+}
+
+.hero h1[b-uino8d4b71] {
+  background: linear-gradient(90deg, #eb2525, #eb8282);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.her h2[b-uino8d4b71] {
+  font-size: 22px;
+  font-weight: 400;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.highlight[b-uino8d4b71] {
+  color: #eb8282;
+  font-weight: 600;
+}
+
+.items-list[b-uino8d4b71] {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-top: 10px;
 }

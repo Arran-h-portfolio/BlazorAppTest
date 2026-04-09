@@ -82,6 +82,10 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/ix2n2qthuo-{0}-s7ebnl7hpo-s7ebnl7hpo.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/hbis50t4is-{0}-1gc4ji7pvs-1gc4ji7pvs.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/scopedcss/Components/Pages/Home.razor.rz.scp.css
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-n9pkduncm3-n9pkduncm3.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/h08u7j3p57-{0}-59zw6rrab1-59zw6rrab1.gz
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/74v2vxv92g-{0}-59zw6rrab1-59zw6rrab1.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/bin/Debug/net10.0/Blazored.LocalStorage.dll
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAppTest.csproj.AssemblyReference.cache
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/h08u7j3p57-{0}-e975ogawf9-e975ogawf9.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/74v2vxv92g-{0}-e975ogawf9-e975ogawf9.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAp.262F2729.Up2Date
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-rwvsaq883s-rwvsaq883s.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/l80f58wqe8-{0}-nvj3ek99dh-nvj3ek99dh.gz
