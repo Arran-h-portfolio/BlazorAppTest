@@ -268,6 +268,8 @@ else if (!isLoading)
     private List<StaffInput> staffList = new();
     private DayRequirements weeklyRequirements = CreateDefaultRequirements();
     private DaySpecificStartTimes dailyOpeningTimes = new();
+    private DaySpecificCoverageRequirements dailyCoverageTargets = new();
+    private RotaGenerationOptions rotaGenerationOptions = new();
     private EndTimeRequirements weeklyEndTimes = new();
     private DaySpecificJobRoles dailyJobRoles = new();
     private List<GeneratedRotaRow> generatedRows = new();
@@ -296,6 +298,8 @@ else if (!isLoading)
             staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
             weeklyRequirements = await localStorage.GetItemAsync<DayRequirements>("weeklyDayRequirements") ?? CreateDefaultRequirements();
             dailyOpeningTimes = await localStorage.GetItemAsync<DaySpecificStartTimes>("daySpecificStartTimes") ?? new DaySpecificStartTimes();
+            dailyCoverageTargets = await localStorage.GetItemAsync<DaySpecificCoverageRequirements>("daySpecificCoverageRequirements") ?? new DaySpecificCoverageRequirements();
+            rotaGenerationOptions = await localStorage.GetItemAsync<RotaGenerationOptions>("rotaGenerationOptions") ?? new RotaGenerationOptions();
             weeklyEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements") ?? new EndTimeRequirements();
             dailyJobRoles = await localStorage.GetItemAsync<DaySpecificJobRoles>("daySpecificJobRoles") ?? new DaySpecificJobRoles();
             generatedRows = await localStorage.GetItemAsync<List<GeneratedRotaRow>>("generatedRotaRows") ?? new List<GeneratedRotaRow>();
@@ -349,6 +353,7 @@ else if (!isLoading)
         }
 
         var assignmentCounts = activeStaff.ToDictionary(s => s.EmployeeID, _ => 0);
+        var adjustedStartCount = 0;
 
         foreach (var day in WeekDays)
         {
@@ -356,6 +361,7 @@ else if (!isLoading)
             var dayRoles = dailyJobRoles.JobRolesByDay.TryGetValue(day, out var roles)
                 ? roles.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
                 : new List<string>();
+            var remainingDayRoles = dayRoles.ToList();
 
             if (requiredCount <= 0)
             {
@@ -370,21 +376,63 @@ else if (!isLoading)
                 continue;
             }
 
+            var openingTime = GetOpeningTimeForDay(day);
+            var coverageRequirement = GetCoverageRequirementForDay(day);
+            var earlyCoverageCount = Math.Min(requiredCount, Math.Max(0, coverageRequirement.RequiredStaff));
+            var coverageTime = coverageRequirement.RequiredByTime < openingTime
+                ? openingTime
+                : coverageRequirement.RequiredByTime;
+
+            if (coverageRequirement.RequiredStaff > requiredCount)
+            {
+                coverageWarnings.Add($"{day}: the by-time target was capped at the daily staffing requirement of {requiredCount}.");
+            }
+
             var assignedIds = new HashSet<string>();
             var dayRows = new List<GeneratedRotaRow>();
             var availableForDay = activeStaff.Where(staff => IsStaffAvailableForDay(staff, day)).ToList();
 
-            foreach (var role in dayRoles)
+            if (rotaGenerationOptions.AlwaysScheduleManagerFirst)
+            {
+                var managerRequiredByTime = openingTime;
+                var managerCandidate = PickBestCandidate(
+                    availableForDay.Where(staff => staff.IsManager),
+                    assignedIds,
+                    assignmentCounts,
+                    day,
+                    managerRequiredByTime);
+
+                if (managerCandidate is null)
+                {
+                    coverageWarnings.Add($"{day}: manager-first is enabled, but no available manager could be scheduled first.");
+                }
+                else
+                {
+                    if (NeedsStartTimeOverride(managerCandidate, day, managerRequiredByTime))
+                    {
+                        adjustedStartCount++;
+                    }
+
+                    assignedIds.Add(managerCandidate.EmployeeID);
+                    assignmentCounts[managerCandidate.EmployeeID]++;
+                    dayRows.Add(BuildRotaRow(day, managerCandidate, ConsumeMatchedRole(managerCandidate, remainingDayRoles), managerRequiredByTime));
+                }
+            }
+
+            foreach (var role in remainingDayRoles.ToList())
             {
                 if (dayRows.Count >= requiredCount)
                 {
                     break;
                 }
 
+                var requiredByTime = dayRows.Count < earlyCoverageCount ? coverageTime : (TimeOnly?)null;
                 var roleCandidate = PickBestCandidate(
                     availableForDay.Where(staff => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase))),
                     assignedIds,
-                    assignmentCounts);
+                    assignmentCounts,
+                    day,
+                    requiredByTime);
 
                 if (roleCandidate is null)
                 {
@@ -392,22 +440,34 @@ else if (!isLoading)
                     continue;
                 }
 
+                if (NeedsStartTimeOverride(roleCandidate, day, requiredByTime))
+                {
+                    adjustedStartCount++;
+                }
+
                 assignedIds.Add(roleCandidate.EmployeeID);
                 assignmentCounts[roleCandidate.EmployeeID]++;
-                dayRows.Add(BuildRotaRow(day, roleCandidate, role));
+                remainingDayRoles.Remove(role);
+                dayRows.Add(BuildRotaRow(day, roleCandidate, role, requiredByTime));
             }
 
             while (dayRows.Count < requiredCount)
             {
-                var candidate = PickBestCandidate(availableForDay, assignedIds, assignmentCounts);
+                var requiredByTime = dayRows.Count < earlyCoverageCount ? coverageTime : (TimeOnly?)null;
+                var candidate = PickBestCandidate(availableForDay, assignedIds, assignmentCounts, day, requiredByTime);
                 if (candidate is null)
                 {
                     break;
                 }
 
+                if (NeedsStartTimeOverride(candidate, day, requiredByTime))
+                {
+                    adjustedStartCount++;
+                }
+
                 assignedIds.Add(candidate.EmployeeID);
                 assignmentCounts[candidate.EmployeeID]++;
-                dayRows.Add(BuildRotaRow(day, candidate, ChooseDisplayRole(candidate, dayRoles)));
+                dayRows.Add(BuildRotaRow(day, candidate, ConsumeMatchedRole(candidate, remainingDayRoles), requiredByTime));
             }
 
             if (dayRows.Count < requiredCount)
@@ -416,13 +476,21 @@ else if (!isLoading)
 
                 while (dayRows.Count < requiredCount)
                 {
+                    var unfilledStartTime = dayRows.Count < earlyCoverageCount ? coverageTime : openingTime;
+                    var unfilledRole = remainingDayRoles.FirstOrDefault() ?? "General";
+
+                    if (remainingDayRoles.Any())
+                    {
+                        remainingDayRoles.RemoveAt(0);
+                    }
+
                     dayRows.Add(new GeneratedRotaRow
                     {
                         Day = day,
                         StaffName = "Unfilled",
-                        Role = dayRoles.ElementAtOrDefault(dayRows.Count) ?? "General",
-                        StartTime = GetOpeningTimeForDay(day).ToString("HH:mm"),
-                        EndTime = GetFallbackEndTime(GetOpeningTimeForDay(day)).ToString("HH:mm")
+                        Role = unfilledRole,
+                        StartTime = unfilledStartTime.ToString("HH:mm"),
+                        EndTime = GetFallbackEndTime(unfilledStartTime).ToString("HH:mm")
                     });
                 }
             }
@@ -430,22 +498,38 @@ else if (!isLoading)
             generatedRows.AddRange(dayRows);
         }
 
-        statusMessage = $"Rota generated with {generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")} staff assignments across the week.";
+        var adjustmentSummary = adjustedStartCount > 0
+            ? $" {adjustedStartCount} start time(s) were brought forward to meet saved coverage and manager-first rules."
+            : string.Empty;
+
+        statusMessage = $"Rota generated with {generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")} staff assignments across the week.{adjustmentSummary}";
     }
 
-    private StaffInput? PickBestCandidate(IEnumerable<StaffInput> candidates, HashSet<string> assignedIds, Dictionary<string, int> assignmentCounts)
+    private StaffInput? PickBestCandidate(IEnumerable<StaffInput> candidates, HashSet<string> assignedIds, Dictionary<string, int> assignmentCounts, string day, TimeOnly? requiredByTime = null)
     {
-        return candidates
-            .Where(staff => !assignedIds.Contains(staff.EmployeeID))
+        var unassignedCandidates = candidates.Where(staff => !assignedIds.Contains(staff.EmployeeID));
+
+        if (requiredByTime.HasValue)
+        {
+            return unassignedCandidates
+                .OrderBy(staff => NeedsStartTimeOverride(staff, day, requiredByTime) ? 1 : 0)
+                .ThenBy(staff => assignmentCounts[staff.EmployeeID])
+                .ThenBy(staff => GetAssignedStartTime(staff, day))
+                .ThenBy(staff => staff.IsManager)
+                .ThenBy(staff => staff.NewStaffName)
+                .FirstOrDefault();
+        }
+
+        return unassignedCandidates
             .OrderBy(staff => assignmentCounts[staff.EmployeeID])
             .ThenBy(staff => staff.IsManager)
             .ThenBy(staff => staff.NewStaffName)
             .FirstOrDefault();
     }
 
-    private GeneratedRotaRow BuildRotaRow(string day, StaffInput staff, string role)
+    private GeneratedRotaRow BuildRotaRow(string day, StaffInput staff, string role, TimeOnly? requiredByTime = null)
     {
-        var startTime = GetAssignedStartTime(staff, day);
+        var startTime = GetAssignedStartTime(staff, day, requiredByTime);
         var endTime = GetAssignedEndTime(staff, startTime);
 
         return new GeneratedRotaRow
@@ -619,16 +703,52 @@ else if (!isLoading)
             .Any(savedDay => string.Equals(savedDay, day, StringComparison.OrdinalIgnoreCase));
     }
 
-    private TimeOnly GetAssignedStartTime(StaffInput staff, string day)
+    private TimeOnly GetAssignedStartTime(StaffInput staff, string day, TimeOnly? requiredByTime = null)
     {
         var openingTime = GetOpeningTimeForDay(day);
+        var assignedStartTime = openingTime;
 
         if (TimeOnly.TryParse(staff.StartTime, out var staffStartTime) && staffStartTime > openingTime)
         {
-            return staffStartTime;
+            assignedStartTime = staffStartTime;
         }
 
-        return openingTime;
+        if (requiredByTime.HasValue)
+        {
+            var targetTime = requiredByTime.Value < openingTime ? openingTime : requiredByTime.Value;
+            if (assignedStartTime > targetTime)
+            {
+                return targetTime;
+            }
+        }
+
+        return assignedStartTime;
+    }
+
+    private bool NeedsStartTimeOverride(StaffInput staff, string day, TimeOnly? requiredByTime)
+    {
+        if (!requiredByTime.HasValue)
+        {
+            return false;
+        }
+
+        var openingTime = GetOpeningTimeForDay(day);
+        var targetTime = requiredByTime.Value < openingTime ? openingTime : requiredByTime.Value;
+        return GetAssignedStartTime(staff, day) > targetTime;
+    }
+
+    private CoverageRequirement GetCoverageRequirementForDay(string day)
+    {
+        if (dailyCoverageTargets.CoverageByDay.TryGetValue(day, out var coverageRequirement))
+        {
+            return coverageRequirement;
+        }
+
+        return new CoverageRequirement
+        {
+            RequiredStaff = 0,
+            RequiredByTime = GetOpeningTimeForDay(day)
+        };
     }
 
     private TimeOnly GetAssignedEndTime(StaffInput staff, TimeOnly startTime)
@@ -665,12 +785,34 @@ else if (!isLoading)
         return new TimeOnly(9, 0);
     }
 
+    private string ConsumeMatchedRole(StaffInput staff, List<string> remainingDayRoles)
+    {
+        var matchingRole = remainingDayRoles.FirstOrDefault(role => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase)));
+        if (!string.IsNullOrWhiteSpace(matchingRole))
+        {
+            remainingDayRoles.Remove(matchingRole);
+            return matchingRole;
+        }
+
+        if (staff.IsManager)
+        {
+            return "Manager";
+        }
+
+        return staff.JobRoles.FirstOrDefault() ?? "General";
+    }
+
     private string ChooseDisplayRole(StaffInput staff, IEnumerable<string> dayRoles)
     {
         var matchingRole = dayRoles.FirstOrDefault(role => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase)));
         if (!string.IsNullOrWhiteSpace(matchingRole))
         {
             return matchingRole;
+        }
+
+        if (staff.IsManager)
+        {
+            return "Manager";
         }
 
         return staff.JobRoles.FirstOrDefault() ?? "General";

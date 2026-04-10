@@ -41,6 +41,32 @@ namespace DayRequirements.Models
         };
     }
 
+    public class CoverageRequirement
+    {
+        public int RequiredStaff { get; set; }
+
+        public TimeOnly RequiredByTime { get; set; } = new(9, 0);
+    }
+
+    public class DaySpecificCoverageRequirements
+    {
+        public Dictionary<string, CoverageRequirement> CoverageByDay { get; set; } = new()
+        {
+            { "Monday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(9, 0) } },
+            { "Tuesday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(9, 0) } },
+            { "Wednesday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(9, 0) } },
+            { "Thursday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(9, 0) } },
+            { "Friday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(9, 0) } },
+            { "Saturday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(10, 0) } },
+            { "Sunday", new CoverageRequirement { RequiredStaff = 0, RequiredByTime = new TimeOnly(10, 0) } }
+        };
+    }
+
+    public class RotaGenerationOptions
+    {
+        public bool AlwaysScheduleManagerFirst { get; set; }
+    }
+
     public class EndTimeRequirements
     {
         public List<TimeOnly> EndTimes { get; set; } = new();

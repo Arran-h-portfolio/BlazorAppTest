@@ -15,6 +15,11 @@
 
 <button class="btn btn-primary" @onclick="ShowInput">Add Staff</button>
 
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-info mt-3" role="alert">@statusMessage</div>
+}
+
 @if (showInput)
 {
     <div class="input-container mb-3">
@@ -160,6 +165,7 @@ else
                         <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
                     </td>
                     <td>
+                        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="@(() => ShowEditStaffDetails(staff))">Edit details</button>
                         <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteStaffWithConfirmation(staff))">Delete</button>
                     </td>
                 </tr>
@@ -201,6 +207,124 @@ else
     </div>
 }
 
+@if (showEditStaffDetails && staffDetailsToEdit != null)
+{
+    <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Staff Details - @staffDetailsToEdit.NewStaffName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditStaffDetails"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Staff Name</label>
+                        <input class="form-control" @bind="editStaffName" />
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsManager" @bind="editIsManager" />
+                            <label class="form-check-label" for="editIsManager">Manager</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsActive" @bind="editIsActive" />
+                            <label class="form-check-label" for="editIsActive">Active staff member</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsAvailableThisWeek" @bind="editIsAvailableThisWeek" />
+                            <label class="form-check-label" for="editIsAvailableThisWeek">Available this week</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Working Days</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var day in WeekDays)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_day_@day" checked="@editWorkingDays.Contains(day)" @onchange="@(e => ToggleEditWorkingDay(e, day))" />
+                                    <label class="form-check-label" for="edit_day_@day">@day</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Time</label>
+                            @if (availableStartTimes.Any())
+                            {
+                                <select class="form-select" @bind="editStartTime">
+                                    <option value="">Select a start time</option>
+                                    @if (!string.IsNullOrWhiteSpace(editStartTime) && !availableStartTimes.Contains(editStartTime))
+                                    {
+                                        <option value="@editStartTime">@editStartTime (current)</option>
+                                    }
+                                    @foreach (var time in availableStartTimes)
+                                    {
+                                        <option value="@time">@time</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input class="form-control" type="time" value="@editStartTime" @onchange="OnEditStartTimeChanged" />
+                            }
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Time</label>
+                            @if (availableEndTimes.Any())
+                            {
+                                <select class="form-select" @bind="editEndTime">
+                                    <option value="">Select an end time</option>
+                                    @if (!string.IsNullOrWhiteSpace(editEndTime) && !availableEndTimes.Contains(editEndTime))
+                                    {
+                                        <option value="@editEndTime">@editEndTime (current)</option>
+                                    }
+                                    @foreach (var time in availableEndTimes)
+                                    {
+                                        <option value="@time">@time</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input class="form-control" type="time" value="@editEndTime" @onchange="OnEditEndTimeChanged" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Job Roles</label>
+                        @if (availableJobRoles.Any())
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var role in availableJobRoles)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="edit_role_@role" checked="@editJobRoles.Contains(role)" @onchange="@(e => ToggleEditJobRole(e, role))" />
+                                        <label class="form-check-label" for="edit_role_@role">@role</label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="form-text">No job roles configured yet. Configure them in Weekly Preferences.</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditStaffDetails">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEditStaffDetails">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code 
 {
     private bool showInput = false;
@@ -234,6 +358,17 @@ else
 
     private bool showEditAvailability = false;
     private StaffInput? editingStaff = null;
+    private bool showEditStaffDetails = false;
+    private StaffInput? staffDetailsToEdit = null;
+    private string editStaffName = string.Empty;
+    private bool editIsManager = false;
+    private bool editIsActive = true;
+    private bool editIsAvailableThisWeek = false;
+    private string editStartTime = string.Empty;
+    private string editEndTime = string.Empty;
+    private List<string> editWorkingDays = new();
+    private List<string> editJobRoles = new();
+    private string statusMessage = string.Empty;
 
     private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
@@ -287,6 +422,7 @@ else
 
             staffList.Add(newStaff);
             await SaveStaffListAsync();
+            statusMessage = $"{newStaff.NewStaffName} added to the staff list.";
             ResetNewStaffForm();
             showInput = false;
         }
@@ -413,7 +549,141 @@ else
     async Task SaveEditAvailability()
     {
         await SaveStaffListAsync();
+        statusMessage = $"Availability updated for {editingStaff?.NewStaffName}.";
         CloseEditAvailability();
+    }
+
+    void ShowEditStaffDetails(StaffInput staff)
+    {
+        staffDetailsToEdit = staff;
+        editStaffName = staff.NewStaffName;
+        editIsManager = staff.IsManager;
+        editIsActive = staff.IsActive;
+        editIsAvailableThisWeek = staff.IsAvailableThisWeek;
+        editStartTime = staff.StartTime;
+        editEndTime = staff.EndTime;
+        editWorkingDays = staff.WorkingDays
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        editJobRoles = staff.JobRoles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        showEditStaffDetails = true;
+        StateHasChanged();
+    }
+
+    void CloseEditStaffDetails()
+    {
+        showEditStaffDetails = false;
+        staffDetailsToEdit = null;
+        editStaffName = string.Empty;
+        editIsManager = false;
+        editIsActive = true;
+        editIsAvailableThisWeek = false;
+        editStartTime = string.Empty;
+        editEndTime = string.Empty;
+        editWorkingDays.Clear();
+        editJobRoles.Clear();
+        StateHasChanged();
+    }
+
+    void ToggleEditWorkingDay(ChangeEventArgs e, string day)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        if (isChecked)
+        {
+            if (!editWorkingDays.Contains(day))
+            {
+                editWorkingDays.Add(day);
+            }
+        }
+        else
+        {
+            editWorkingDays.Remove(day);
+        }
+    }
+
+    void ToggleEditJobRole(ChangeEventArgs e, string role)
+    {
+        var isChecked = e?.Value is bool boolValue && boolValue
+            || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
+
+        if (isChecked)
+        {
+            if (!editJobRoles.Contains(role))
+            {
+                editJobRoles.Add(role);
+            }
+        }
+        else
+        {
+            editJobRoles.Remove(role);
+        }
+    }
+
+    async Task SaveEditStaffDetails()
+    {
+        if (staffDetailsToEdit == null || string.IsNullOrWhiteSpace(editStaffName))
+        {
+            return;
+        }
+
+        var updatedName = editStaffName.Trim();
+        staffDetailsToEdit.NewStaffName = updatedName;
+        staffDetailsToEdit.IsManager = editIsManager;
+        staffDetailsToEdit.IsActive = editIsActive;
+        staffDetailsToEdit.StartTime = editStartTime;
+        staffDetailsToEdit.EndTime = editEndTime;
+        staffDetailsToEdit.JobRoles = editJobRoles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var updatedAvailability = BuildEditedDailyAvailability(staffDetailsToEdit);
+        staffDetailsToEdit.WorkingDays = string.Join(", ", editWorkingDays);
+
+        if (!editIsActive || !editIsAvailableThisWeek)
+        {
+            updatedAvailability = WeekDays.ToDictionary(day => day, _ => false);
+            staffDetailsToEdit.IsAvailableThisWeek = false;
+        }
+        else
+        {
+            staffDetailsToEdit.IsAvailableThisWeek = updatedAvailability.Any(x => x.Value);
+        }
+
+        staffDetailsToEdit.DailyAvailability = updatedAvailability;
+
+        await SaveStaffListAsync();
+        statusMessage = $"{updatedName} updated successfully.";
+        CloseEditStaffDetails();
+    }
+
+    Dictionary<string, bool> BuildEditedDailyAvailability(StaffInput staff)
+    {
+        var selectedDays = editWorkingDays.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var previousWorkingDays = staff.WorkingDays
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return WeekDays.ToDictionary(
+            day => day,
+            day =>
+            {
+                if (!selectedDays.Contains(day))
+                {
+                    return false;
+                }
+
+                if (!previousWorkingDays.Contains(day))
+                {
+                    return true;
+                }
+
+                return staff.DailyAvailability.TryGetValue(day, out var isAvailable) ? isAvailable : true;
+            });
     }
 
     void OnStartTimeChanged(ChangeEventArgs e)
@@ -424,6 +694,16 @@ else
     void OnEndTimeChanged(ChangeEventArgs e)
     {
         newEndTime = e?.Value?.ToString() ?? string.Empty;
+    }
+
+    void OnEditStartTimeChanged(ChangeEventArgs e)
+    {
+        editStartTime = e?.Value?.ToString() ?? string.Empty;
+    }
+
+    void OnEditEndTimeChanged(ChangeEventArgs e)
+    {
+        editEndTime = e?.Value?.ToString() ?? string.Empty;
     }
 
     async Task ToggleAvailability(ChangeEventArgs e, StaffInput staff)
@@ -454,6 +734,7 @@ else
     {
         staffList.Remove(staff);
         await SaveStaffListAsync();
+        statusMessage = $"{staff.NewStaffName} deleted from the staff list.";
     }
 
     async Task DeleteStaffWithConfirmation(StaffInput staff)
