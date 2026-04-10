@@ -488,21 +488,14 @@ else if (!isLoading)
 
     private StaffInput? PickBestCandidate(IEnumerable<StaffInput> candidates, HashSet<string> assignedIds, Dictionary<string, int> assignmentCounts, string day, TimeOnly? requiredByTime = null)
     {
-        var unassignedCandidates = candidates.Where(staff => !assignedIds.Contains(staff.EmployeeID));
-
-        if (requiredByTime.HasValue)
-        {
-            return unassignedCandidates
-                .OrderBy(staff => NeedsStartTimeOverride(staff, day, requiredByTime) ? 1 : 0)
-                .ThenBy(staff => assignmentCounts[staff.EmployeeID])
-                .ThenBy(staff => GetAssignedStartTime(staff, day))
-                .ThenBy(staff => staff.IsManager)
-                .ThenBy(staff => staff.NewStaffName)
-                .FirstOrDefault();
-        }
-
-        return unassignedCandidates
-            .OrderBy(staff => assignmentCounts[staff.EmployeeID])
+        return candidates
+            .Where(staff => !assignedIds.Contains(staff.EmployeeID))
+            .OrderBy(staff => requiredByTime.HasValue && NeedsStartTimeOverride(staff, day, requiredByTime) ? 1 : 0)
+            .ThenBy(staff => HasMetPreferredDaysTarget(staff, assignmentCounts) ? 1 : 0)
+            .ThenBy(staff => GetAllocationLoadScore(staff, assignmentCounts))
+            .ThenByDescending(GetPreferredDaysTarget)
+            .ThenBy(staff => assignmentCounts[staff.EmployeeID])
+            .ThenBy(staff => GetAssignedStartTime(staff, day))
             .ThenBy(staff => staff.IsManager)
             .ThenBy(staff => staff.NewStaffName)
             .FirstOrDefault();
@@ -720,6 +713,55 @@ else if (!isLoading)
         var openingTime = GetOpeningTimeForDay(day);
         var targetTime = requiredByTime.Value < openingTime ? openingTime : requiredByTime.Value;
         return GetAssignedStartTime(staff, day) > targetTime;
+    }
+
+    private bool HasMetPreferredDaysTarget(StaffInput staff, Dictionary<string, int> assignmentCounts)
+    {
+        return assignmentCounts[staff.EmployeeID] >= GetPreferredDaysTarget(staff);
+    }
+
+    private double GetAllocationLoadScore(StaffInput staff, Dictionary<string, int> assignmentCounts)
+    {
+        var preferredDaysTarget = GetPreferredDaysTarget(staff);
+        return preferredDaysTarget <= 0
+            ? assignmentCounts[staff.EmployeeID]
+            : (double)assignmentCounts[staff.EmployeeID] / preferredDaysTarget;
+    }
+
+    private int GetPreferredDaysTarget(StaffInput staff)
+    {
+        var availableDaysCount = CountAvailableDays(staff);
+
+        if (staff.PreferredDaysPerWeek <= 0)
+        {
+            return Math.Max(1, availableDaysCount);
+        }
+
+        if (availableDaysCount <= 0)
+        {
+            return Math.Max(1, staff.PreferredDaysPerWeek);
+        }
+
+        return Math.Clamp(staff.PreferredDaysPerWeek, 1, availableDaysCount);
+    }
+
+    private int CountAvailableDays(StaffInput staff)
+    {
+        var explicitAvailability = staff.DailyAvailability?.Count(x => x.Value) ?? 0;
+        if (explicitAvailability > 0)
+        {
+            return explicitAvailability;
+        }
+
+        if (string.IsNullOrWhiteSpace(staff.WorkingDays))
+        {
+            return 0;
+        }
+
+        return staff.WorkingDays
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
     }
 
     private CoverageRequirement GetCoverageRequirementForDay(string day)

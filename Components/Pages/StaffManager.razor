@@ -44,6 +44,12 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label" for="preferredDaysPerWeek">Preferred days per week</label>
+            <input id="preferredDaysPerWeek" class="form-control" type="number" min="0" max="7" @bind="newPreferredDaysPerWeek" />
+            <div class="form-text">Used by the rota to balance full-time and part-time shift allocation fairly.</div>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label" for="startTime">Start Time</label>
             @if (availableStartTimes.Any())
             {
@@ -125,6 +131,7 @@ else
                 <th>Name</th>
                 <th>Job Roles</th>
                 <th>Available Days</th>
+                <th>Preferred days</th>
                 <th>Available this week</th>
                 <th>Actions</th>
             </tr>
@@ -160,6 +167,9 @@ else
                             <span class="text-muted">No days available</span>
                         }
                         <button class="btn btn-sm btn-outline-primary ms-2" @onclick="@(() => ShowEditAvailability(staff))">Edit</button>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">@GetPreferredDaysDisplay(staff)</span>
                     </td>
                     <td>
                         <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
@@ -250,6 +260,12 @@ else
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Preferred days per week</label>
+                        <input class="form-control" type="number" min="0" max="7" @bind="editPreferredDaysPerWeek" />
+                        <div class="form-text">This helps the rota balance full-time and part-time hours more fairly.</div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Start Time</label>
@@ -333,6 +349,7 @@ else
     private string newStartTime = "";
 
     private string newEndTime = "";
+    private int newPreferredDaysPerWeek = 0;
 
     private List<string> newWorkingDays = new();
     private List<string> newJobRoles = new();
@@ -364,6 +381,7 @@ else
     private bool editIsManager = false;
     private bool editIsActive = true;
     private bool editIsAvailableThisWeek = false;
+    private int editPreferredDaysPerWeek = 0;
     private string editStartTime = string.Empty;
     private string editEndTime = string.Empty;
     private List<string> editWorkingDays = new();
@@ -391,6 +409,7 @@ else
         newIsManager = false;
         newStartTime = string.Empty;
         newEndTime = string.Empty;
+        newPreferredDaysPerWeek = 0;
         newWorkingDays.Clear();
         newJobRoles.Clear();
         foreach (var day in WeekDays)
@@ -416,6 +435,7 @@ else
                 EndTime = newEndTime,
                 IsActive = true,
                 IsAvailableThisWeek = initialDailyAvailability.Any(x => x.Value),
+                PreferredDaysPerWeek = NormalizePreferredDaysPerWeek(newPreferredDaysPerWeek, newWorkingDays.Count),
                 JobRoles = newJobRoles.ToList(),
                 DailyAvailability = initialDailyAvailability
             };
@@ -560,6 +580,7 @@ else
         editIsManager = staff.IsManager;
         editIsActive = staff.IsActive;
         editIsAvailableThisWeek = staff.IsAvailableThisWeek;
+        editPreferredDaysPerWeek = GetEffectivePreferredDaysPerWeek(staff);
         editStartTime = staff.StartTime;
         editEndTime = staff.EndTime;
         editWorkingDays = staff.WorkingDays
@@ -581,6 +602,7 @@ else
         editIsManager = false;
         editIsActive = true;
         editIsAvailableThisWeek = false;
+        editPreferredDaysPerWeek = 0;
         editStartTime = string.Empty;
         editEndTime = string.Empty;
         editWorkingDays.Clear();
@@ -635,6 +657,7 @@ else
         staffDetailsToEdit.NewStaffName = updatedName;
         staffDetailsToEdit.IsManager = editIsManager;
         staffDetailsToEdit.IsActive = editIsActive;
+        staffDetailsToEdit.PreferredDaysPerWeek = NormalizePreferredDaysPerWeek(editPreferredDaysPerWeek, editWorkingDays.Count);
         staffDetailsToEdit.StartTime = editStartTime;
         staffDetailsToEdit.EndTime = editEndTime;
         staffDetailsToEdit.JobRoles = editJobRoles
@@ -684,6 +707,47 @@ else
 
                 return staff.DailyAvailability.TryGetValue(day, out var isAvailable) ? isAvailable : true;
             });
+    }
+
+    private int GetEffectivePreferredDaysPerWeek(StaffInput staff)
+    {
+        var availableDaysCount = staff.DailyAvailability?.Count(x => x.Value) ?? 0;
+
+        if (availableDaysCount == 0 && !string.IsNullOrWhiteSpace(staff.WorkingDays))
+        {
+            availableDaysCount = staff.WorkingDays
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
+        }
+
+        if (staff.PreferredDaysPerWeek <= 0)
+        {
+            return availableDaysCount;
+        }
+
+        return availableDaysCount > 0
+            ? Math.Min(staff.PreferredDaysPerWeek, availableDaysCount)
+            : staff.PreferredDaysPerWeek;
+    }
+
+    private static int NormalizePreferredDaysPerWeek(int preferredDays, int availableDaysCount)
+    {
+        var normalized = Math.Max(0, preferredDays);
+        if (availableDaysCount <= 0)
+        {
+            return normalized;
+        }
+
+        return normalized == 0
+            ? availableDaysCount
+            : Math.Min(normalized, availableDaysCount);
+    }
+
+    private string GetPreferredDaysDisplay(StaffInput staff)
+    {
+        var effectiveDays = GetEffectivePreferredDaysPerWeek(staff);
+        return effectiveDays > 0 ? $"{effectiveDays} / week" : "Not set";
     }
 
     void OnStartTimeChanged(ChangeEventArgs e)

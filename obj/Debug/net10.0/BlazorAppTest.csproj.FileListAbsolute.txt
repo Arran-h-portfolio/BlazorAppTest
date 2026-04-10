@@ -87,5 +87,5 @@
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/h08u7j3p57-{0}-e975ogawf9-e975ogawf9.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/74v2vxv92g-{0}-e975ogawf9-e975ogawf9.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/BlazorAp.262F2729.Up2Date
-/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-rwvsaq883s-rwvsaq883s.gz
 /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/l80f58wqe8-{0}-nvj3ek99dh-nvj3ek99dh.gz
+/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net10.0/compressed/i8s9sefrvv-{0}-fztutpu3w0-fztutpu3w0.gz

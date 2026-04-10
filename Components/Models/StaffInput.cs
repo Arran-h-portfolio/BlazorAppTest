@@ -22,6 +22,9 @@ namespace StaffInput.Models
 
         public bool IsAvailableThisWeek { get; set; }
 
+        // 0 means "not set" and will fall back to the staff member's available days.
+        public int PreferredDaysPerWeek { get; set; }
+
         public List<string> JobRoles { get; set; } = new();
 
         // Daily availability tracking - maps day name to availability status
