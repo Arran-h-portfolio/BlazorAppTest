@@ -359,7 +359,11 @@ else if (!isLoading)
         {
             var requiredCount = GetRequiredStaffForDay(day);
             var dayRoles = dailyJobRoles.JobRolesByDay.TryGetValue(day, out var roles)
-                ? roles.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                ? roles
+                    .Select(NormalizeRoleName)
+                    .Where(role => !string.IsNullOrWhiteSpace(role))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
                 : new List<string>();
             var remainingDayRoles = dayRoles.ToList();
 
@@ -415,46 +419,22 @@ else if (!isLoading)
 
                     assignedIds.Add(managerCandidate.EmployeeID);
                     assignmentCounts[managerCandidate.EmployeeID]++;
-                    dayRows.Add(BuildRotaRow(day, managerCandidate, ConsumeMatchedRole(managerCandidate, remainingDayRoles), managerRequiredByTime));
+                    dayRows.Add(BuildRotaRow(day, managerCandidate, ChooseDisplayRole(managerCandidate, remainingDayRoles), managerRequiredByTime));
+                    remainingDayRoles = GetUncoveredRoles(dayRoles, dayRows);
                 }
-            }
-
-            foreach (var role in remainingDayRoles.ToList())
-            {
-                if (dayRows.Count >= requiredCount)
-                {
-                    break;
-                }
-
-                var requiredByTime = dayRows.Count < earlyCoverageCount ? coverageTime : (TimeOnly?)null;
-                var roleCandidate = PickBestCandidate(
-                    availableForDay.Where(staff => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase))),
-                    assignedIds,
-                    assignmentCounts,
-                    day,
-                    requiredByTime);
-
-                if (roleCandidate is null)
-                {
-                    coverageWarnings.Add($"{day}: no available staff member found for required role '{role}'.");
-                    continue;
-                }
-
-                if (NeedsStartTimeOverride(roleCandidate, day, requiredByTime))
-                {
-                    adjustedStartCount++;
-                }
-
-                assignedIds.Add(roleCandidate.EmployeeID);
-                assignmentCounts[roleCandidate.EmployeeID]++;
-                remainingDayRoles.Remove(role);
-                dayRows.Add(BuildRotaRow(day, roleCandidate, role, requiredByTime));
             }
 
             while (dayRows.Count < requiredCount)
             {
                 var requiredByTime = dayRows.Count < earlyCoverageCount ? coverageTime : (TimeOnly?)null;
-                var candidate = PickBestCandidate(availableForDay, assignedIds, assignmentCounts, day, requiredByTime);
+
+                var rolePriorityCandidates = remainingDayRoles.Any()
+                    ? availableForDay.Where(staff => remainingDayRoles.Any(role => StaffHasRole(staff, role)))
+                    : availableForDay;
+
+                var candidate = PickBestCandidate(rolePriorityCandidates, assignedIds, assignmentCounts, day, requiredByTime)
+                    ?? PickBestCandidate(availableForDay, assignedIds, assignmentCounts, day, requiredByTime);
+
                 if (candidate is null)
                 {
                     break;
@@ -467,7 +447,13 @@ else if (!isLoading)
 
                 assignedIds.Add(candidate.EmployeeID);
                 assignmentCounts[candidate.EmployeeID]++;
-                dayRows.Add(BuildRotaRow(day, candidate, ConsumeMatchedRole(candidate, remainingDayRoles), requiredByTime));
+                dayRows.Add(BuildRotaRow(day, candidate, ChooseDisplayRole(candidate, remainingDayRoles), requiredByTime));
+                remainingDayRoles = GetUncoveredRoles(dayRoles, dayRows);
+            }
+
+            foreach (var uncoveredRole in remainingDayRoles)
+            {
+                coverageWarnings.Add($"{day}: no scheduled staff member covers required role '{uncoveredRole}'.");
             }
 
             if (dayRows.Count < requiredCount)
@@ -478,11 +464,6 @@ else if (!isLoading)
                 {
                     var unfilledStartTime = dayRows.Count < earlyCoverageCount ? coverageTime : openingTime;
                     var unfilledRole = remainingDayRoles.FirstOrDefault() ?? "General";
-
-                    if (remainingDayRoles.Any())
-                    {
-                        remainingDayRoles.RemoveAt(0);
-                    }
 
                     dayRows.Add(new GeneratedRotaRow
                     {
@@ -654,7 +635,11 @@ else if (!isLoading)
         }
 
         row.StaffName = selectedStaff.NewStaffName;
-        row.Role = selectedStaff.JobRoles.FirstOrDefault() ?? row.Role;
+
+        var dayRoles = dailyJobRoles.JobRolesByDay.TryGetValue(row.Day, out var roles)
+            ? roles.Select(NormalizeRoleName)
+            : Enumerable.Empty<string>();
+        row.Role = ChooseDisplayRole(selectedStaff, dayRoles);
 
         var startTime = GetAssignedStartTime(selectedStaff, row.Day);
         row.StartTime = startTime.ToString("HH:mm");
@@ -785,26 +770,54 @@ else if (!isLoading)
         return new TimeOnly(9, 0);
     }
 
-    private string ConsumeMatchedRole(StaffInput staff, List<string> remainingDayRoles)
+    private bool StaffHasRole(StaffInput staff, string role)
     {
-        var matchingRole = remainingDayRoles.FirstOrDefault(role => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase)));
-        if (!string.IsNullOrWhiteSpace(matchingRole))
+        var normalizedRole = NormalizeRoleName(role);
+        if (string.IsNullOrWhiteSpace(normalizedRole))
         {
-            remainingDayRoles.Remove(matchingRole);
-            return matchingRole;
+            return false;
         }
 
-        if (staff.IsManager)
+        return staff.JobRoles.Any(job => string.Equals(NormalizeRoleName(job), normalizedRole, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool IsRoleCoveredByScheduledStaff(string role, IEnumerable<GeneratedRotaRow> scheduledRows)
+    {
+        var normalizedRole = NormalizeRoleName(role);
+        if (string.IsNullOrWhiteSpace(normalizedRole))
         {
-            return "Manager";
+            return true;
         }
 
-        return staff.JobRoles.FirstOrDefault() ?? "General";
+        return scheduledRows
+            .Where(row => !string.IsNullOrWhiteSpace(row.EmployeeID))
+            .Select(row => staffList.FirstOrDefault(staff => staff.EmployeeID == row.EmployeeID))
+            .Any(staff => staff != null &&
+                ((staff.IsManager && string.Equals(normalizedRole, "Manager", StringComparison.OrdinalIgnoreCase))
+                || StaffHasRole(staff, normalizedRole)));
+    }
+
+    private List<string> GetUncoveredRoles(IEnumerable<string> requiredRoles, IEnumerable<GeneratedRotaRow> scheduledRows)
+    {
+        return requiredRoles
+            .Select(NormalizeRoleName)
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(role => !IsRoleCoveredByScheduledStaff(role, scheduledRows))
+            .ToList();
+    }
+
+    private static string NormalizeRoleName(string? role)
+    {
+        return role?.Trim() ?? string.Empty;
     }
 
     private string ChooseDisplayRole(StaffInput staff, IEnumerable<string> dayRoles)
     {
-        var matchingRole = dayRoles.FirstOrDefault(role => staff.JobRoles.Any(job => string.Equals(job, role, StringComparison.OrdinalIgnoreCase)));
+        var matchingRole = dayRoles
+            .Select(NormalizeRoleName)
+            .FirstOrDefault(role => StaffHasRole(staff, role));
+
         if (!string.IsNullOrWhiteSpace(matchingRole))
         {
             return matchingRole;
@@ -815,7 +828,9 @@ else if (!isLoading)
             return "Manager";
         }
 
-        return staff.JobRoles.FirstOrDefault() ?? "General";
+        return staff.JobRoles
+            .Select(NormalizeRoleName)
+            .FirstOrDefault(role => !string.IsNullOrWhiteSpace(role)) ?? "General";
     }
 
     private int GetRequiredStaffForDay(string day)
