@@ -1,5 +1,4 @@
 @page "/weeklyPrefs"
-@rendermode InteractiveServer
 @using DayRequirements.Models
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 
@@ -203,7 +202,7 @@
 <button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save preferences</button>
 @if (!string.IsNullOrWhiteSpace(saveMessage))
 {
-    <div class="alert alert-success mt-3" role="alert">@saveMessage</div>
+    <div class="alert @saveMessageCssClass mt-3" role="alert">@saveMessage</div>
 }
 
 @code {
@@ -225,57 +224,70 @@
     private RotaGenerationOptions rotaGenerationOptions = new RotaGenerationOptions();
     private DaySpecificJobRoles dailyJobRoles = new DaySpecificJobRoles();
     private string saveMessage = string.Empty;
+    private string saveMessageCssClass = "alert-success";
+    private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var savedDayRequirements = await localStorage.GetItemAsync<DayRequirements>("weeklyDayRequirements");
-            if (savedDayRequirements != null)
+            try
             {
-                weeklyRequirements = savedDayRequirements;
-            }
+                var savedDayRequirements = await localStorage.GetItemAsync<DayRequirements>("weeklyDayRequirements");
+                if (savedDayRequirements != null)
+                {
+                    weeklyRequirements = savedDayRequirements;
+                }
 
-            var savedStartTimes = await localStorage.GetItemAsync<StartTimeRequirements>("startTimeRequirements");
-            if (savedStartTimes != null)
-            {
-                weeklyStartTimes = savedStartTimes;
-            }
+                var savedStartTimes = await localStorage.GetItemAsync<StartTimeRequirements>("startTimeRequirements");
+                if (savedStartTimes != null)
+                {
+                    weeklyStartTimes = savedStartTimes;
+                }
 
-            var savedEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements");
-            if (savedEndTimes != null)            
-            {
-                weeklyEndTimes = savedEndTimes;
-            }
+                var savedEndTimes = await localStorage.GetItemAsync<EndTimeRequirements>("endTimeRequirements");
+                if (savedEndTimes != null)
+                {
+                    weeklyEndTimes = savedEndTimes;
+                }
 
-            var savedJobRoles = await localStorage.GetItemAsync<JobRoleRequirements>("jobRoleRequirements");
-            if (savedJobRoles != null)
-            {
-                weeklyJobRoles = savedJobRoles;
-            }
+                var savedJobRoles = await localStorage.GetItemAsync<JobRoleRequirements>("jobRoleRequirements");
+                if (savedJobRoles != null)
+                {
+                    weeklyJobRoles = savedJobRoles;
+                }
 
-            var savedDailyOpeningTimes = await localStorage.GetItemAsync<DaySpecificStartTimes>("daySpecificStartTimes");
-            if (savedDailyOpeningTimes != null)
-            {
-                dailyOpeningTimes = savedDailyOpeningTimes;
-            }
+                var savedDailyOpeningTimes = await localStorage.GetItemAsync<DaySpecificStartTimes>("daySpecificStartTimes");
+                if (savedDailyOpeningTimes != null)
+                {
+                    dailyOpeningTimes = savedDailyOpeningTimes;
+                }
 
-            var savedDailyCoverageTargets = await localStorage.GetItemAsync<DaySpecificCoverageRequirements>("daySpecificCoverageRequirements");
-            if (savedDailyCoverageTargets != null)
-            {
-                dailyCoverageTargets = savedDailyCoverageTargets;
-            }
+                var savedDailyCoverageTargets = await localStorage.GetItemAsync<DaySpecificCoverageRequirements>("daySpecificCoverageRequirements");
+                if (savedDailyCoverageTargets != null)
+                {
+                    dailyCoverageTargets = savedDailyCoverageTargets;
+                }
 
-            var savedRotaGenerationOptions = await localStorage.GetItemAsync<RotaGenerationOptions>("rotaGenerationOptions");
-            if (savedRotaGenerationOptions != null)
-            {
-                rotaGenerationOptions = savedRotaGenerationOptions;
-            }
+                var savedRotaGenerationOptions = await localStorage.GetItemAsync<RotaGenerationOptions>("rotaGenerationOptions");
+                if (savedRotaGenerationOptions != null)
+                {
+                    rotaGenerationOptions = savedRotaGenerationOptions;
+                }
 
-            var savedDailyJobRoles = await localStorage.GetItemAsync<DaySpecificJobRoles>("daySpecificJobRoles");
-            if (savedDailyJobRoles != null)
+                var savedDailyJobRoles = await localStorage.GetItemAsync<DaySpecificJobRoles>("daySpecificJobRoles");
+                if (savedDailyJobRoles != null)
+                {
+                    dailyJobRoles = savedDailyJobRoles;
+                }
+
+                EnsurePreferenceData();
+            }
+            catch (Exception ex)
             {
-                dailyJobRoles = savedDailyJobRoles;
+                EnsurePreferenceData();
+                saveMessageCssClass = "alert-warning";
+                saveMessage = $"Saved preferences couldn't be fully loaded, so safe defaults were used. ({ex.Message})";
             }
 
             StateHasChanged();
@@ -284,15 +296,25 @@
 
     async Task SaveWeeklyPrefs()
     {
-        await localStorage.SetItemAsync("weeklyDayRequirements", weeklyRequirements);
-        await localStorage.SetItemAsync("startTimeRequirements", weeklyStartTimes);
-        await localStorage.SetItemAsync("endTimeRequirements", weeklyEndTimes);
-        await localStorage.SetItemAsync("jobRoleRequirements", weeklyJobRoles);
-        await localStorage.SetItemAsync("daySpecificStartTimes", dailyOpeningTimes);
-        await localStorage.SetItemAsync("daySpecificCoverageRequirements", dailyCoverageTargets);
-        await localStorage.SetItemAsync("rotaGenerationOptions", rotaGenerationOptions);
-        await localStorage.SetItemAsync("daySpecificJobRoles", dailyJobRoles);
-        saveMessage = "Weekly preferences saved locally.";
+        try
+        {
+            EnsurePreferenceData();
+            await localStorage.SetItemAsync("weeklyDayRequirements", weeklyRequirements);
+            await localStorage.SetItemAsync("startTimeRequirements", weeklyStartTimes);
+            await localStorage.SetItemAsync("endTimeRequirements", weeklyEndTimes);
+            await localStorage.SetItemAsync("jobRoleRequirements", weeklyJobRoles);
+            await localStorage.SetItemAsync("daySpecificStartTimes", dailyOpeningTimes);
+            await localStorage.SetItemAsync("daySpecificCoverageRequirements", dailyCoverageTargets);
+            await localStorage.SetItemAsync("rotaGenerationOptions", rotaGenerationOptions);
+            await localStorage.SetItemAsync("daySpecificJobRoles", dailyJobRoles);
+            saveMessageCssClass = "alert-success";
+            saveMessage = "Weekly preferences saved locally.";
+        }
+        catch (Exception ex)
+        {
+            saveMessageCssClass = "alert-danger";
+            saveMessage = $"Unable to save weekly preferences: {ex.Message}";
+        }
     }
 
     void AddStartTime()
@@ -336,6 +358,8 @@
 
     void ToggleDayJobRole(ChangeEventArgs e, string day, string role)
     {
+        EnsureDayJobRolesEntry(day);
+
         var isChecked = e?.Value is bool boolValue && boolValue
             || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
 
@@ -354,6 +378,8 @@
 
     void ToggleAllDayJobRoles(ChangeEventArgs e, string day)
     {
+        EnsureDayJobRolesEntry(day);
+
         var isChecked = e?.Value is bool boolValue && boolValue
             || e?.Value is string stringValue && (stringValue == "true" || stringValue == "on");
 
@@ -367,8 +393,72 @@
 
     bool AreAllJobRolesSelected(string day)
     {
+        EnsureDayJobRolesEntry(day);
+
         return weeklyJobRoles.JobRoles.Any()
             && weeklyJobRoles.JobRoles.All(role => dailyJobRoles.JobRolesByDay[day].Contains(role));
+    }
+
+    private void EnsurePreferenceData()
+    {
+        weeklyStartTimes ??= new StartTimeRequirements();
+        weeklyStartTimes.StartTimes ??= new List<TimeOnly>();
+
+        weeklyEndTimes ??= new EndTimeRequirements();
+        weeklyEndTimes.EndTimes ??= new List<TimeOnly>();
+
+        weeklyJobRoles ??= new JobRoleRequirements();
+        weeklyJobRoles.JobRoles ??= new List<string>();
+
+        dailyOpeningTimes ??= new DaySpecificStartTimes();
+        dailyOpeningTimes.StartTimesByDay ??= new Dictionary<string, TimeOnly>();
+
+        dailyCoverageTargets ??= new DaySpecificCoverageRequirements();
+        dailyCoverageTargets.CoverageByDay ??= new Dictionary<string, CoverageRequirement>();
+
+        dailyJobRoles ??= new DaySpecificJobRoles();
+        dailyJobRoles.JobRolesByDay ??= new Dictionary<string, List<string>>();
+
+        foreach (var day in WeekDays)
+        {
+            if (!dailyOpeningTimes.StartTimesByDay.ContainsKey(day))
+            {
+                dailyOpeningTimes.StartTimesByDay[day] = GetDefaultOpeningTime(day);
+            }
+
+            if (!dailyCoverageTargets.CoverageByDay.TryGetValue(day, out var coverageRequirement) || coverageRequirement == null)
+            {
+                dailyCoverageTargets.CoverageByDay[day] = new CoverageRequirement
+                {
+                    RequiredStaff = 0,
+                    RequiredByTime = GetDefaultOpeningTime(day)
+                };
+            }
+            else if (coverageRequirement.RequiredByTime == default)
+            {
+                coverageRequirement.RequiredByTime = GetDefaultOpeningTime(day);
+            }
+
+            EnsureDayJobRolesEntry(day);
+        }
+    }
+
+    private void EnsureDayJobRolesEntry(string day)
+    {
+        dailyJobRoles ??= new DaySpecificJobRoles();
+        dailyJobRoles.JobRolesByDay ??= new Dictionary<string, List<string>>();
+
+        if (!dailyJobRoles.JobRolesByDay.TryGetValue(day, out var roles) || roles == null)
+        {
+            dailyJobRoles.JobRolesByDay[day] = new List<string>();
+        }
+    }
+
+    private static TimeOnly GetDefaultOpeningTime(string day)
+    {
+        return day is "Saturday" or "Sunday"
+            ? new TimeOnly(10, 0)
+            : new TimeOnly(9, 0);
     }
 
     private static string FormatTime(TimeOnly? time)
