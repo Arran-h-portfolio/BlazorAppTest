@@ -40,7 +40,7 @@
   margin-bottom: 12px;
 }
 
-.her h2 {
+.hero h2 {
   font-size: 22px;
   font-weight: 400;
   color: #64748b;
@@ -56,4 +56,81 @@
   list-style-type: disc;
   padding-left: 20px;
   margin-top: 10px;
+}
+
+.dashboard {
+  margin-top: 12px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.dashboard-card.total {
+  border-color: #eb8282;
+  box-shadow: 0 8px 20px rgba(235, 37, 37, 0.08);
+}
+
+.dashboard-card h2 {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.dashboard-card .big {
+  margin: 8px 0 0;
+  font-size: 30px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.panel h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 700px) {
+  .dashboard-header {
+    flex-direction: column;
+  }
+
+  .dashboard-actions {
+    width: 100%;
+  }
 }

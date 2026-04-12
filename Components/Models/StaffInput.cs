@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace StaffInput.Models
 {
     public class StaffInput
@@ -19,6 +17,8 @@ namespace StaffInput.Models
         public required string EndTime { get; set; }
 
         public required bool IsActive { get; set; }
+
+        public decimal HourlyWage { get; set; }
 
         public bool IsAvailableThisWeek { get; set; }
 
@@ -44,4 +44,5 @@ namespace StaffInput.Models
     {
         public List<string> Skills { get; set; } = new();
     }
+
 }

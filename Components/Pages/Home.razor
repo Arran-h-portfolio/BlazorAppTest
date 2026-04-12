@@ -1,51 +1,310 @@
 ﻿@page "/"
+@using StaffCost.Models
+@using StaffInput.Models
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 
 <PageTitle>Home</PageTitle>
 
-<section class="hero">
-    <div class="hero-content">
-        <h1>RotaHub</h1>
-        <h2>
-           Smarter <span class="highlight">staff scheduling</span>, without the stress
-        </h2>
+@if (!isDashboardView)
+{
+    <section class="hero">
+        <div class="hero-content">
+            <h1>RotaHub</h1>
+            <h2>
+               Smarter <span class="highlight">staff scheduling</span>, without the stress
+            </h2>
 
-        <div class="hero-subtext">
-            <p>Automate your staff scheduling with a smarter, faster rota system.</p>
-            <ul class="items-list">
-                <li>Manage your team</li>
-                <li>Set availability</li>
-                <li>Generate optimised rotas in seconds</li>
-            </ul>
+            <div class="hero-subtext">
+                <p>Automate your staff scheduling with a smarter, faster rota system.</p>
+                <ul class="items-list">
+                    <li>Manage your team</li>
+                    <li>Set availability</li>
+                    <li>Generate optimised rotas in seconds</li>
+                </ul>
+            </div>
+
+            <div class="hero-buttons">
+                <button class="btn-primary" @onclick="ShowDashboard">Go to Dashboard</button>
+                <button class="btn-secondary">View Demo</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <h3>👥 Staff Management</h3>
+            <p>Add and organise your team with ease.</p>
         </div>
 
-        <div class="hero-buttons">
-            <button class="btn-primary">Get Started</button>
-            <button class="btn-secondary">View Demo</button>
+        <div class="feature-card">
+            <h3>🕒 Availability Tracking</h3>
+            <p>Prevent conflicts before they happen.</p>
         </div>
-    </div>
-</section>
 
-<section class="features">
-    <div class="feature-card">
-        <h3>👥 Staff Management</h3>
-        <p>Add and organise your team with ease.</p>
-    </div>
+        <div class="feature-card">
+            <h3>⚡ Auto Rota Generator</h3>
+            <p>Create optimised schedules instantly.</p>
+        </div>
 
-    <div class="feature-card">
-        <h3>🕒 Availability Tracking</h3>
-        <p>Prevent conflicts before they happen.</p>
-    </div>
+        <div class="feature-card">
+            <h3>✏️ Manual Editing</h3>
+            <p>Full control when you need it.</p>
+        </div>
+    </section>
 
-    <div class="feature-card">
-        <h3>⚡ Auto Rota Generator</h3>
-        <p>Create optimised schedules instantly.</p>
-    </div>
+    <div><p class="trust-text">Trusted by teams to simplify scheduling</p></div>
+}
+else
+{
+    <section class="dashboard">
+        <div class="dashboard-header">
+            <div>
+                <h1>Cost Dashboard</h1>
+                <p>Live totals based on your saved rota and current staff hourly wages.</p>
+            </div>
+            <div class="dashboard-actions">
+                <button class="btn-secondary" @onclick="ShowHome">Back to Home</button>
+                <button class="btn-primary" @onclick="RefreshDashboard" disabled="@isLoadingDashboard">Refresh</button>
+            </div>
+        </div>
 
-    <div class="feature-card">
-        <h3>✏️ Manual Editing</h3>
-        <p>Full control when you need it.</p>
-    </div>
-</section>
+        @if (!string.IsNullOrWhiteSpace(dashboardStatusMessage))
+        {
+            <div class="alert alert-info" role="alert">@dashboardStatusMessage</div>
+        }
 
-<div><p class="trust-text">Trusted by teams to simplify scheduling</p></div>
+        @if (isLoadingDashboard)
+        {
+            <p class="text-muted">Loading dashboard data...</p>
+        }
+        else
+        {
+            <div class="dashboard-cards">
+                <article class="dashboard-card total">
+                    <h2>Total Staff Cost (Week)</h2>
+                    <p class="big">@FormatCurrency(weeklyStaffCost.TotalCost)</p>
+                </article>
+                <article class="dashboard-card">
+                    <h2>Saved Rota Rows</h2>
+                    <p class="big">@savedRotaRowCount</p>
+                </article>
+                <article class="dashboard-card">
+                    <h2>Paid Assignments Counted</h2>
+                    <p class="big">@countedAssignmentRows</p>
+                </article>
+            </div>
+
+            <div class="dashboard-grid">
+                <section class="panel">
+                    <h3>Total Staff Cost Per Day</h3>
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th class="text-end">Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var dayTotal in dailyStaffCosts)
+                            {
+                                <tr>
+                                    <td>@GetDayName(dayTotal.DayOfWeek)</td>
+                                    <td class="text-end">@FormatCurrency(dayTotal.TotalCost)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="panel">
+                    <h3>Staff Cost Breakdown</h3>
+                    @if (staffCostBreakdown.Any())
+                    {
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th class="text-end">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cost in staffCostBreakdown)
+                                {
+                                    <tr>
+                                        <td>@cost.EmployeeName</td>
+                                        <td class="text-end">@FormatCurrency(cost.TotalCost)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No paid assignments found in the saved rota.</p>
+                    }
+                </section>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    private bool isDashboardView = false;
+    private bool isLoadingDashboard = false;
+    private string dashboardStatusMessage = string.Empty;
+    private int savedRotaRowCount = 0;
+    private int countedAssignmentRows = 0;
+
+    private readonly string[] WeekDays = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private List<TotalStaffCostPerDay> dailyStaffCosts = new();
+    private TotalStaffCostPerWeek weeklyStaffCost = new(0);
+    private List<StaffCostWithName> staffCostBreakdown = new();
+
+    private sealed class DashboardRotaRow
+    {
+        public string Day { get; set; } = string.Empty;
+        public string EmployeeID { get; set; } = string.Empty;
+        public string StaffName { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+    }
+
+    private async Task ShowDashboard()
+    {
+        isDashboardView = true;
+        await LoadDashboardData();
+    }
+
+    private void ShowHome()
+    {
+        isDashboardView = false;
+    }
+
+    private async Task RefreshDashboard()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoadingDashboard = true;
+        dashboardStatusMessage = string.Empty;
+
+        try
+        {
+            var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
+            var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
+
+            savedRotaRowCount = savedRows.Count;
+            countedAssignmentRows = 0;
+
+            var dayTotals = Enumerable.Range(0, 7).ToDictionary(dayIndex => dayIndex, _ => 0m);
+            var staffTotals = new Dictionary<string, decimal>();
+            var staffLookup = staffList.ToDictionary(staff => staff.EmployeeID, staff => staff);
+
+            foreach (var row in savedRows)
+            {
+                if (string.IsNullOrWhiteSpace(row.EmployeeID)
+                    || row.StaffName == "Unfilled"
+                    || row.StaffName == "No staff required")
+                {
+                    continue;
+                }
+
+                if (!TryGetDayIndex(row.Day, out var dayIndex))
+                {
+                    continue;
+                }
+
+                if (!staffLookup.TryGetValue(row.EmployeeID, out var staff) || staff.HourlyWage <= 0)
+                {
+                    continue;
+                }
+
+                if (!TryGetShiftHours(row.StartTime, row.EndTime, out var shiftHours) || shiftHours <= 0)
+                {
+                    continue;
+                }
+
+                var shiftCost = decimal.Round(staff.HourlyWage * (decimal)shiftHours, 2);
+                dayTotals[dayIndex] += shiftCost;
+
+                if (!staffTotals.TryAdd(staff.EmployeeID, shiftCost))
+                {
+                    staffTotals[staff.EmployeeID] += shiftCost;
+                }
+
+                countedAssignmentRows++;
+            }
+
+            dailyStaffCosts = Enumerable.Range(0, 7)
+                .Select(dayIndex => new TotalStaffCostPerDay(dayIndex, decimal.Round(dayTotals[dayIndex], 2)))
+                .ToList();
+
+            weeklyStaffCost = new TotalStaffCostPerWeek(decimal.Round(dayTotals.Values.Sum(), 2));
+
+            staffCostBreakdown = staffTotals
+                .OrderByDescending(entry => entry.Value)
+                .Select(entry =>
+                {
+                    var staff = staffLookup[entry.Key];
+                    return new StaffCostWithName(staff.EmployeeID, decimal.Round(entry.Value, 2), staff.NewStaffName);
+                })
+                .ToList();
+
+            dashboardStatusMessage = $"Loaded {savedRotaRowCount} saved rota rows. Counted {countedAssignmentRows} paid assignments.";
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Unable to load dashboard data: {ex.Message}";
+            dailyStaffCosts = Enumerable.Range(0, 7)
+                .Select(dayIndex => new TotalStaffCostPerDay(dayIndex, 0))
+                .ToList();
+            weeklyStaffCost = new TotalStaffCostPerWeek(0);
+            staffCostBreakdown = new List<StaffCostWithName>();
+        }
+        finally
+        {
+            isLoadingDashboard = false;
+        }
+    }
+
+    private static bool TryGetShiftHours(string startTime, string endTime, out double hours)
+    {
+        hours = 0;
+
+        if (!TimeOnly.TryParse(startTime, out var start) || !TimeOnly.TryParse(endTime, out var end))
+        {
+            return false;
+        }
+
+        var startSpan = start.ToTimeSpan();
+        var endSpan = end.ToTimeSpan();
+        var duration = endSpan - startSpan;
+
+        if (duration <= TimeSpan.Zero)
+        {
+            duration = duration.Add(TimeSpan.FromDays(1));
+        }
+
+        hours = duration.TotalHours;
+        return true;
+    }
+
+    private bool TryGetDayIndex(string? day, out int dayIndex)
+    {
+        dayIndex = Array.FindIndex(WeekDays, weekDay => string.Equals(weekDay, day, StringComparison.OrdinalIgnoreCase));
+        return dayIndex >= 0;
+    }
+
+    private string GetDayName(int dayIndex)
+    {
+        return dayIndex >= 0 && dayIndex < WeekDays.Length ? WeekDays[dayIndex] : "Unknown";
+    }
+
+    private static string FormatCurrency(decimal amount)
+    {
+        return $"£{amount:0.00}";
+    }
+}

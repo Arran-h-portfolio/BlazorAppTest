@@ -22,15 +22,27 @@
 		</data>
 		<key>Resources/wwwroot/BlazorAppTest.styles.css</key>
 		<data>
-		qM1oKCPDUzJaks9x3lUIqHRWEcM=
+		noiI0NKoul8lz/9LzjeAPuNxiWw=
 		</data>
 		<key>Resources/wwwroot/BlazorAppTest.styles.css.br</key>
 		<data>
-		raV1Xbqjyf2pT6OTSp1eoKFcuv4=
+		OksaAqywW8d185fN/WkS2bOApa8=
 		</data>
 		<key>Resources/wwwroot/BlazorAppTest.styles.css.gz</key>
 		<data>
-		H2jXBA9ty2eQZKoycajo7Xvtlpg=
+		5BbAVaewx27rKV3Z3S4YSSLiDk0=
+		</data>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css</key>
+		<data>
+		noiI0NKoul8lz/9LzjeAPuNxiWw=
+		</data>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css.br</key>
+		<data>
+		OksaAqywW8d185fN/WkS2bOApa8=
+		</data>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css.gz</key>
+		<data>
+		5BbAVaewx27rKV3Z3S4YSSLiDk0=
 		</data>
 		<key>Resources/wwwroot/Components/Layout/ReconnectModal.razor.js</key>
 		<data>
@@ -619,14 +631,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tyZMYIGHaPMGkT6sT9hBh75Hp+Z++jKbI/6wWANsa7I=
+			DiIU+Xe4zcIft/egwBryrc6XearbKbq68rN6oDZRzFU=
 			</data>
 		</dict>
 		<key>MonoBundle/BlazorAppTest.pdb</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			8zhCyF3REO/4eHx4z1rMTctuS0C3xHArCMcxR9B8MsQ=
+			AoFKsYnwTwWZA05wTcJMTq3w5a5ROiChs7gD0fd6iSQ=
 			</data>
 		</dict>
 		<key>MonoBundle/Blazored.LocalStorage.dll</key>
@@ -2327,21 +2339,42 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			AqymDtNxY1pKa0UhNUoBUSPTdL3UNF0p4yGN6R5eJPg=
+			i5+OgoN5PBNaFDfdeZX5IUhlzLL5IfYGhzOj/QqFCNM=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/BlazorAppTest.styles.css.br</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			UjNgkMXReMoJjj1BRjIpyg2rGqyOGDvmgJwO6Jd+08Y=
+			BaAjXi93X5guaRLS3z6NzWXLsou7G4YlKfx8MZfjP+k=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/BlazorAppTest.styles.css.gz</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			KPJOOhKuQ439mZOPsUBqWT5MN0QQ6BBWNErKOTCNqyg=
+			o5UR22W98k8F4d3FcJOV5mecgz7Xx+vyHzozsiIChuo=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			i5+OgoN5PBNaFDfdeZX5IUhlzLL5IfYGhzOj/QqFCNM=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css.br</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			BaAjXi93X5guaRLS3z6NzWXLsou7G4YlKfx8MZfjP+k=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/BlazorAppTest.vv5fsmiwt6.bundle.scp.css.gz</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			o5UR22W98k8F4d3FcJOV5mecgz7Xx+vyHzozsiIChuo=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/Components/Layout/ReconnectModal.razor.js</key>

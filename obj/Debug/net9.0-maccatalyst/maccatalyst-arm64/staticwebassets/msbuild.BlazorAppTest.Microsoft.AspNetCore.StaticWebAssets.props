@@ -32,12 +32,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName>ScopedCss</AssetTraitName>
       <AssetTraitValue>ApplicationBundle</AssetTraitValue>
-      <Fingerprint>e975ogawf9</Fingerprint>
-      <Integrity>AqymDtNxY1pKa0UhNUoBUSPTdL3UNF0p4yGN6R5eJPg=</Integrity>
+      <Fingerprint>vv5fsmiwt6</Fingerprint>
+      <Integrity>i5+OgoN5PBNaFDfdeZX5IUhlzLL5IfYGhzOj/QqFCNM=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>11263</FileLength>
-      <LastWriteTime>Sat, 11 Apr 2026 06:13:57 GMT</LastWriteTime>
+      <FileLength>12604</FileLength>
+      <LastWriteTime>Sun, 12 Apr 2026 07:23:14 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\BlazorAppTest.styles.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Components\Layout\ReconnectModal.razor.js'))">
