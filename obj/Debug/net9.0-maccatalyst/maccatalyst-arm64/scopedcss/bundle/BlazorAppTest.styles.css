@@ -369,6 +369,147 @@ main[b-0rro5d7mqr] {
         opacity: 0;
     }
 }
+/* /Components/Pages/Dashboard.razor.rz.scp.css */
+.dashboard[b-y5p0sdzn1b] {
+  margin-top: 12px;
+}
+
+.dashboard-header[b-y5p0sdzn1b] {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-actions[b-y5p0sdzn1b] {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tax-rate-control[b-y5p0sdzn1b] {
+  min-width: 150px;
+}
+
+.tax-rate-control .form-label[b-y5p0sdzn1b] {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dashboard-cards[b-y5p0sdzn1b] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-card[b-y5p0sdzn1b] {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.dashboard-card.total[b-y5p0sdzn1b] {
+  border-color: #eb8282;
+  box-shadow: 0 8px 20px rgba(235, 37, 37, 0.08);
+}
+
+.dashboard-card h2[b-y5p0sdzn1b] {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.dashboard-card .big[b-y5p0sdzn1b] {
+  margin: 8px 0 0;
+  font-size: 30px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dashboard-grid[b-y5p0sdzn1b] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.chart-grid[b-y5p0sdzn1b] {
+  margin-top: 8px;
+}
+
+.panel[b-y5p0sdzn1b] {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.panel h3[b-y5p0sdzn1b] {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.pie-layout[b-y5p0sdzn1b] {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pie-visual[b-y5p0sdzn1b] {
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  flex: 0 0 auto;
+}
+
+.pie-legend[b-y5p0sdzn1b] {
+  min-width: 220px;
+  flex: 1;
+}
+
+.legend-row[b-y5p0sdzn1b] {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.legend-dot[b-y5p0sdzn1b] {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-label[b-y5p0sdzn1b] {
+  color: #334155;
+}
+
+.legend-value[b-y5p0sdzn1b] {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .dashboard-header[b-y5p0sdzn1b] {
+    flex-direction: column;
+  }
+
+  .dashboard-actions[b-y5p0sdzn1b] {
+    width: 100%;
+  }
+
+  .pie-visual[b-y5p0sdzn1b] {
+    width: 170px;
+    height: 170px;
+  }
+}
 /* /Components/Pages/Home.razor.rz.scp.css */
 /* FEATURES */
 .features[b-uino8d4b71] {
@@ -428,81 +569,4 @@ main[b-0rro5d7mqr] {
   list-style-type: disc;
   padding-left: 20px;
   margin-top: 10px;
-}
-
-.dashboard[b-uino8d4b71] {
-  margin-top: 12px;
-}
-
-.dashboard-header[b-uino8d4b71] {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.dashboard-actions[b-uino8d4b71] {
-  display: flex;
-  gap: 8px;
-}
-
-.dashboard-cards[b-uino8d4b71] {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.dashboard-card[b-uino8d4b71] {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.dashboard-card.total[b-uino8d4b71] {
-  border-color: #eb8282;
-  box-shadow: 0 8px 20px rgba(235, 37, 37, 0.08);
-}
-
-.dashboard-card h2[b-uino8d4b71] {
-  margin: 0;
-  font-size: 14px;
-  color: #64748b;
-}
-
-.dashboard-card .big[b-uino8d4b71] {
-  margin: 8px 0 0;
-  font-size: 30px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.dashboard-grid[b-uino8d4b71] {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.panel[b-uino8d4b71] {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.panel h3[b-uino8d4b71] {
-  margin-top: 0;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 700px) {
-  .dashboard-header[b-uino8d4b71] {
-    flex-direction: column;
-  }
-
-  .dashboard-actions[b-uino8d4b71] {
-    width: 100%;
-  }
 }

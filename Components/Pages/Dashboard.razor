@@ -1,0 +1,417 @@
+@page "/dashboard"
+@using StaffCost.Models
+@using StaffInput.Models
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<PageTitle>Dashboard</PageTitle>
+
+<section class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Cost Dashboard</h1>
+            <p>Live totals based on your saved rota and current staff hourly wages.</p>
+        </div>
+        <div class="dashboard-actions">
+            <div class="tax-rate-control">
+                <label for="employerTaxRate" class="form-label mb-1">Employer tax (%)</label>
+                <input id="employerTaxRate" class="form-control" type="number" min="0" max="100" step="0.1" @bind="employerTaxRatePercent" @bind:after="OnTaxRateChanged" />
+            </div>
+            <button class="btn-primary" @onclick="RefreshDashboard" disabled="@isLoadingDashboard">Refresh</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(dashboardStatusMessage))
+    {
+        <div class="alert alert-info" role="alert">@dashboardStatusMessage</div>
+    }
+
+    @if (isLoadingDashboard)
+    {
+        <p class="text-muted">Loading dashboard data...</p>
+    }
+    else
+    {
+        <div class="dashboard-cards">
+            <article class="dashboard-card total">
+                <h2>Total Staff Cost (Week)</h2>
+                <p class="mb-1"><strong>Gross:</strong> @FormatCurrency(weeklyStaffCost.TotalCost)</p>
+                <p class="big"><strong>After Tax:</strong> @FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost))</p>
+            </article>
+            <article class="dashboard-card">
+                <h2>Saved Rota Rows</h2>
+                <p class="big">@savedRotaRowCount</p>
+            </article>
+            <article class="dashboard-card">
+                <h2>Paid Assignments Counted</h2>
+                <p class="big">@countedAssignmentRows</p>
+            </article>
+        </div>
+
+        <div class="dashboard-grid">
+            <section class="panel">
+                <h3>Total Staff Cost Per Day</h3>
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th class="text-end">Gross</th>
+                            <th class="text-end">After Tax</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dayTotal in dailyStaffCosts)
+                        {
+                            <tr>
+                                <td>@GetDayName(dayTotal.DayOfWeek)</td>
+                                <td class="text-end">@FormatCurrency(dayTotal.TotalCost)</td>
+                                <td class="text-end">@FormatCurrency(GetAfterTaxAmount(dayTotal.TotalCost))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel">
+                <h3>Staff Cost Breakdown</h3>
+                @if (staffCostBreakdown.Any())
+                {
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Staff</th>
+                                <th class="text-end">Gross</th>
+                                <th class="text-end">After Tax</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cost in staffCostBreakdown)
+                            {
+                                <tr>
+                                    <td>@cost.EmployeeName</td>
+                                    <td class="text-end">@FormatCurrency(cost.TotalCost)</td>
+                                    <td class="text-end">@FormatCurrency(GetAfterTaxAmount(cost.TotalCost))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No paid assignments found in the saved rota.</p>
+                }
+            </section>
+        </div>
+
+        <div class="dashboard-grid chart-grid mt-3">
+            <section class="panel">
+                <h3>Who Costs More Per Week (Hours Worked)</h3>
+                @if (staffCostBreakdown.Any())
+                {
+                    var staffSlices = GetStaffCostPieSlices();
+                    <div class="pie-layout">
+                        <div class="pie-visual" style="@BuildPieChartStyle(staffSlices)" role="img" aria-label="Weekly staff cost share"></div>
+                        <div class="pie-legend">
+                            @foreach (var slice in staffSlices)
+                            {
+                                <div class="legend-row">
+                                    <span class="legend-dot" style="background-color: @slice.Color"></span>
+                                    <span class="legend-label">@slice.Label</span>
+                                    <span class="legend-value">@FormatCurrency(slice.Amount) (@slice.Percentage.ToString("0.0")%)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No staff cost data available yet.</p>
+                }
+            </section>
+
+            <section class="panel">
+                <h3>Gross vs Tax Add-On</h3>
+                @if (weeklyStaffCost.TotalCost > 0)
+                {
+                    var taxSlices = GetTaxCompositionPieSlices();
+                    <div class="pie-layout">
+                        <div class="pie-visual" style="@BuildPieChartStyle(taxSlices)" role="img" aria-label="Gross and employer tax composition"></div>
+                        <div class="pie-legend">
+                            @foreach (var slice in taxSlices)
+                            {
+                                <div class="legend-row">
+                                    <span class="legend-dot" style="background-color: @slice.Color"></span>
+                                    <span class="legend-label">@slice.Label</span>
+                                    <span class="legend-value">@FormatCurrency(slice.Amount) (@slice.Percentage.ToString("0.0")%)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No weekly gross value available yet.</p>
+                }
+            </section>
+        </div>
+    }
+</section>
+
+@code {
+    private bool isLoadingDashboard = false;
+    private string dashboardStatusMessage = string.Empty;
+    private int savedRotaRowCount = 0;
+    private int countedAssignmentRows = 0;
+    private decimal employerTaxRatePercent = 20m;
+    private readonly string[] PieChartColors =
+    {
+        "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#84cc16"
+    };
+
+    private readonly string[] WeekDays = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private List<TotalStaffCostPerDay> dailyStaffCosts = new();
+    private TotalStaffCostPerWeek weeklyStaffCost = new(0);
+    private List<StaffCostWithName> staffCostBreakdown = new();
+
+    private sealed class DashboardRotaRow
+    {
+        public string Day { get; set; } = string.Empty;
+        public string EmployeeID { get; set; } = string.Empty;
+        public string StaffName { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+    }
+
+    private sealed class PieSlice
+    {
+        public string Label { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal Percentage { get; set; }
+        public string Color { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task RefreshDashboard()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoadingDashboard = true;
+        dashboardStatusMessage = string.Empty;
+
+        try
+        {
+            var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
+            var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
+
+            savedRotaRowCount = savedRows.Count;
+            countedAssignmentRows = 0;
+
+            var dayTotals = Enumerable.Range(0, 7).ToDictionary(dayIndex => dayIndex, _ => 0m);
+            var staffTotals = new Dictionary<string, decimal>();
+            var staffLookup = staffList.ToDictionary(staff => staff.EmployeeID, staff => staff);
+
+            foreach (var row in savedRows)
+            {
+                if (string.IsNullOrWhiteSpace(row.EmployeeID)
+                    || row.StaffName == "Unfilled"
+                    || row.StaffName == "No staff required")
+                {
+                    continue;
+                }
+
+                if (!TryGetDayIndex(row.Day, out var dayIndex))
+                {
+                    continue;
+                }
+
+                if (!staffLookup.TryGetValue(row.EmployeeID, out var staff) || staff.HourlyWage <= 0)
+                {
+                    continue;
+                }
+
+                if (!TryGetShiftHours(row.StartTime, row.EndTime, out var shiftHours) || shiftHours <= 0)
+                {
+                    continue;
+                }
+
+                var shiftCost = decimal.Round(staff.HourlyWage * (decimal)shiftHours, 2);
+                dayTotals[dayIndex] += shiftCost;
+
+                if (!staffTotals.TryAdd(staff.EmployeeID, shiftCost))
+                {
+                    staffTotals[staff.EmployeeID] += shiftCost;
+                }
+
+                countedAssignmentRows++;
+            }
+
+            dailyStaffCosts = Enumerable.Range(0, 7)
+                .Select(dayIndex => new TotalStaffCostPerDay(dayIndex, decimal.Round(dayTotals[dayIndex], 2)))
+                .ToList();
+
+            weeklyStaffCost = new TotalStaffCostPerWeek(decimal.Round(dayTotals.Values.Sum(), 2));
+
+            staffCostBreakdown = staffTotals
+                .OrderByDescending(entry => entry.Value)
+                .Select(entry =>
+                {
+                    var staff = staffLookup[entry.Key];
+                    return new StaffCostWithName(staff.EmployeeID, decimal.Round(entry.Value, 2), staff.NewStaffName);
+                })
+                .ToList();
+
+            dashboardStatusMessage = $"Loaded {savedRotaRowCount} saved rota rows. Counted {countedAssignmentRows} paid assignments.";
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Unable to load dashboard data: {ex.Message}";
+            dailyStaffCosts = Enumerable.Range(0, 7)
+                .Select(dayIndex => new TotalStaffCostPerDay(dayIndex, 0))
+                .ToList();
+            weeklyStaffCost = new TotalStaffCostPerWeek(0);
+            staffCostBreakdown = new List<StaffCostWithName>();
+        }
+        finally
+        {
+            isLoadingDashboard = false;
+        }
+    }
+
+    private static bool TryGetShiftHours(string startTime, string endTime, out double hours)
+    {
+        hours = 0;
+
+        if (!TimeOnly.TryParse(startTime, out var start) || !TimeOnly.TryParse(endTime, out var end))
+        {
+            return false;
+        }
+
+        var startSpan = start.ToTimeSpan();
+        var endSpan = end.ToTimeSpan();
+        var duration = endSpan - startSpan;
+
+        if (duration <= TimeSpan.Zero)
+        {
+            duration = duration.Add(TimeSpan.FromDays(1));
+        }
+
+        hours = duration.TotalHours;
+        return true;
+    }
+
+    private Task OnTaxRateChanged()
+    {
+        employerTaxRatePercent = Math.Clamp(employerTaxRatePercent, 0m, 100m);
+        return Task.CompletedTask;
+    }
+
+    private decimal GetAfterTaxAmount(decimal grossAmount)
+    {
+        var taxRate = Math.Clamp(employerTaxRatePercent, 0m, 100m) / 100m;
+        var afterTaxAmount = grossAmount * (1 + taxRate);
+        return decimal.Round(afterTaxAmount, 2);
+    }
+
+    private List<PieSlice> GetStaffCostPieSlices()
+    {
+        var total = staffCostBreakdown.Sum(x => x.TotalCost);
+        if (total <= 0)
+        {
+            return new List<PieSlice>();
+        }
+
+        return staffCostBreakdown
+            .Select((cost, index) => new PieSlice
+            {
+                Label = cost.EmployeeName,
+                Amount = cost.TotalCost,
+                Percentage = decimal.Round((cost.TotalCost / total) * 100m, 1),
+                Color = PieChartColors[index % PieChartColors.Length]
+            })
+            .ToList();
+    }
+
+    private List<PieSlice> GetTaxCompositionPieSlices()
+    {
+        var gross = weeklyStaffCost.TotalCost;
+        var afterTax = GetAfterTaxAmount(gross);
+        var taxPortion = Math.Max(0, decimal.Round(afterTax - gross, 2));
+        var total = gross + taxPortion;
+
+        if (total <= 0)
+        {
+            return new List<PieSlice>();
+        }
+
+        var slices = new List<PieSlice>
+        {
+            new()
+            {
+                Label = "Gross",
+                Amount = gross,
+                Percentage = decimal.Round((gross / total) * 100m, 1),
+                Color = "#3b82f6"
+            }
+        };
+
+        if (taxPortion > 0)
+        {
+            slices.Add(new PieSlice
+            {
+                Label = "Tax Add-On",
+                Amount = taxPortion,
+                Percentage = decimal.Round((taxPortion / total) * 100m, 1),
+                Color = "#f97316"
+            });
+        }
+
+        return slices;
+    }
+
+    private static string BuildPieChartStyle(List<PieSlice> slices)
+    {
+        if (!slices.Any())
+        {
+            return "background: conic-gradient(#e2e8f0 0% 100%);";
+        }
+
+        var gradientStops = new List<string>();
+        decimal currentStart = 0m;
+
+        foreach (var slice in slices)
+        {
+            var currentEnd = Math.Min(100m, currentStart + slice.Percentage);
+            gradientStops.Add($"{slice.Color} {currentStart.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}% {currentEnd.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%");
+            currentStart = currentEnd;
+        }
+
+        if (currentStart < 100m)
+        {
+            gradientStops.Add($"#e2e8f0 {currentStart.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}% 100%");
+        }
+
+        return $"background: conic-gradient({string.Join(", ", gradientStops)});";
+    }
+
+    private bool TryGetDayIndex(string? day, out int dayIndex)
+    {
+        dayIndex = Array.FindIndex(WeekDays, weekDay => string.Equals(weekDay, day, StringComparison.OrdinalIgnoreCase));
+        return dayIndex >= 0;
+    }
+
+    private string GetDayName(int dayIndex)
+    {
+        return dayIndex >= 0 && dayIndex < WeekDays.Length ? WeekDays[dayIndex] : "Unknown";
+    }
+
+    private static string FormatCurrency(decimal amount)
+    {
+        return $"£{amount:0.00}";
+    }
+}
