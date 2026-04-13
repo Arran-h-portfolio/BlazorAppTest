@@ -2992,9 +2992,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/BlazorAppTest.csproj",
-      "projectName": "BlazorAppTest",
-      "projectPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/BlazorAppTest.csproj",
+      "projectUniqueName": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj",
+      "projectName": "RotaHub",
+      "projectPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj",
       "packagesPath": "/Users/arran/.nuget/packages/",
       "outputPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/",
       "projectStyle": "PackageReference",

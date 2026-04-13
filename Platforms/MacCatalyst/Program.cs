@@ -1,6 +1,6 @@
 using UIKit;
 
-namespace BlazorAppTest;
+namespace RotaHub;
 
 public class Program
 {

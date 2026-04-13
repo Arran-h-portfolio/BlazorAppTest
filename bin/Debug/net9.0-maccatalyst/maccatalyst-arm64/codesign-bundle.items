@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <_CodesignBundle Include="BlazorAppTest.app">
+    <_CodesignBundle Include="RotaHub.app">
       <EnableCodeSigning>true</EnableCodeSigning>
       <CodesignSigningKey>-</CodesignSigningKey>
       <CodesignEntitlements>/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Debug/net9.0-maccatalyst/maccatalyst-arm64/Entitlements.xcent</CodesignEntitlements>

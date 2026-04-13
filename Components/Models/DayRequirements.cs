@@ -3,6 +3,8 @@ namespace DayRequirements.Models
     // Setting up MIN/MAX staff requirements for each day of the week 
     // in the hopes of creating a drop down bar for each day of the week in the future.
     // on the day requirements page
+
+    // Below is the class for determining the number of staff required for each day set as ints
     public class DayRequirements
     {
         public required int Monday { get; set; }

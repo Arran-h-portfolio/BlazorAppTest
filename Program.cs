@@ -2,7 +2,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorAppTest;
+namespace RotaHub;
 
 public static class MauiProgram
 {
@@ -49,7 +49,7 @@ public static class MauiProgram
     {
         try
         {
-            var logPath = Path.Combine(Path.GetTempPath(), "BlazorAppTest-startup.log");
+            var logPath = Path.Combine(Path.GetTempPath(), "RotaHub-startup.log");
             var message = $"[{DateTime.Now:O}] {source}{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}";
             File.AppendAllText(logPath, message);
         }

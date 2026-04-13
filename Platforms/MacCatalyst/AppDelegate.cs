@@ -1,6 +1,6 @@
 using Foundation;
 
-namespace BlazorAppTest;
+namespace RotaHub;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

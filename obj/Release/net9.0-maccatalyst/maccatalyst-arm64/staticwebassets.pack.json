@@ -5,8 +5,8 @@
       "PackagePath": "staticwebassets/Components/Layout/ReconnectModal.razor.js"
     },
     {
-      "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Release/net9.0-maccatalyst/maccatalyst-arm64/scopedcss/bundle/BlazorAppTest.styles.css",
-      "PackagePath": "staticwebassets/BlazorAppTest.styles.css"
+      "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Release/net9.0-maccatalyst/maccatalyst-arm64/scopedcss/bundle/RotaHub.styles.css",
+      "PackagePath": "staticwebassets/RotaHub.styles.css"
     },
     {
       "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/wwwroot/app.css",
@@ -17,8 +17,16 @@
       "PackagePath": "staticwebassets/favicon.png"
     },
     {
+      "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/wwwroot/images/rotahub-logo.svg",
+      "PackagePath": "staticwebassets/images/rotahub-logo.svg"
+    },
+    {
       "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/wwwroot/index.html",
       "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/wwwroot/js/export.js",
+      "PackagePath": "staticwebassets/js/export.js"
     },
     {
       "Id": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/wwwroot/lib/bootstrap/dist/css/bootstrap-grid.css",
@@ -201,24 +209,24 @@
       "PackagePath": "staticwebassets/lib/bootstrap/dist/js/site.js"
     },
     {
-      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.BlazorAppTest.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.RotaHub.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
     },
     {
-      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.BlazorAppTest.Microsoft.AspNetCore.StaticWebAssets.props",
+      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.RotaHub.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },
     {
-      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.build.BlazorAppTest.props",
-      "PackagePath": "build\\BlazorAppTest.props"
+      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.build.RotaHub.props",
+      "PackagePath": "build\\RotaHub.props"
     },
     {
-      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.buildMultiTargeting.BlazorAppTest.props",
-      "PackagePath": "buildMultiTargeting\\BlazorAppTest.props"
+      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.buildMultiTargeting.RotaHub.props",
+      "PackagePath": "buildMultiTargeting\\RotaHub.props"
     },
     {
-      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.buildTransitive.BlazorAppTest.props",
-      "PackagePath": "buildTransitive\\BlazorAppTest.props"
+      "Id": "obj/Release/net9.0-maccatalyst/maccatalyst-arm64/staticwebassets/msbuild.buildTransitive.RotaHub.props",
+      "PackagePath": "buildTransitive\\RotaHub.props"
     }
   ],
   "ElementsToRemove": []

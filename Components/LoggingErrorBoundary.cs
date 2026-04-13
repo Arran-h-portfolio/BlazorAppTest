@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorAppTest.Components;
+namespace RotaHub.Components;
 
 public class LoggingErrorBoundary : ErrorBoundary
 {
@@ -15,7 +15,7 @@ public class LoggingErrorBoundary : ErrorBoundary
 
         try
         {
-            var logPath = Path.Combine(Path.GetTempPath(), "BlazorAppTest-startup.log");
+            var logPath = Path.Combine(Path.GetTempPath(), "RotaHub-startup.log");
             File.AppendAllText(logPath, $"[{DateTime.Now:O}] UI exception{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}");
         }
         catch

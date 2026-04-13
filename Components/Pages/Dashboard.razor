@@ -2,6 +2,7 @@
 @using StaffCost.Models
 @using StaffInput.Models
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime JS
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -12,17 +13,43 @@
             <p>Live totals based on your saved rota and current staff hourly wages.</p>
         </div>
         <div class="dashboard-actions">
+            <div class="date-selector">
+                <label for="rotaDate" class="form-label mb-1">Rota Date</label>
+                <input id="rotaDate" class="form-control" type="date" @bind="rotaDate" />
+            </div>
             <div class="tax-rate-control">
                 <label for="employerTaxRate" class="form-label mb-1">Employer tax (%)</label>
                 <input id="employerTaxRate" class="form-control" type="number" min="0" max="100" step="0.1" @bind="employerTaxRatePercent" @bind:after="OnTaxRateChanged" />
             </div>
             <button class="btn-primary" @onclick="RefreshDashboard" disabled="@isLoadingDashboard">Refresh</button>
+            <button class="btn-secondary" @onclick="ExportToXml" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">Export XML</button>
+            <button class="btn-outline-secondary" @onclick="ShowXmlModal" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">View XML</button>
         </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(dashboardStatusMessage))
     {
         <div class="alert alert-info" role="alert">@dashboardStatusMessage</div>
+    }
+
+    @if (showXmlModal && !string.IsNullOrWhiteSpace(exportedXmlContent))
+    {
+        <div class="modal-backdrop" @onclick="CloseXmlModal"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">XML Export Preview</h5>
+                    <button type="button" class="btn-close" @onclick="CloseXmlModal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea class="form-control" style="height: 400px; font-family: monospace; font-size: 11px;" readonly>@exportedXmlContent</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseXmlModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="CopyXmlToClipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
     }
 
     @if (isLoadingDashboard)
@@ -162,6 +189,9 @@
     private int savedRotaRowCount = 0;
     private int countedAssignmentRows = 0;
     private decimal employerTaxRatePercent = 20m;
+    private DateOnly rotaDate = new();
+    private bool showXmlModal = false;
+    private string exportedXmlContent = string.Empty;
     private readonly string[] PieChartColors =
     {
         "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#84cc16"
@@ -191,6 +221,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        rotaDate = DateOnly.FromDateTime(DateTime.Now);
         await LoadDashboardData();
     }
 
@@ -413,5 +444,162 @@
     private static string FormatCurrency(decimal amount)
     {
         return $"£{amount:0.00}";
+    }
+
+    private async Task ExportToXml()
+    {
+        try
+        {
+            dashboardStatusMessage = "Generating export...";
+            StateHasChanged();
+            
+            var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
+            var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
+
+            var xmlContent = GenerateXmlContent(staffList, savedRows);
+            var fileName = $"rota_export_{rotaDate:yyyy-MM-dd}.xml";
+            
+            await SaveXmlFileToDisk(xmlContent, fileName);
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Export failed: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Export error: {ex}");
+        }
+    }
+
+    private string GenerateXmlContent(List<StaffInput> staffList, List<DashboardRotaRow> rotaRows)
+    {
+        var xml = new System.Xml.Linq.XDocument(
+            new System.Xml.Linq.XDeclaration("1.0", "utf-8", "yes"),
+            new System.Xml.Linq.XElement("RotaExport",
+                new System.Xml.Linq.XAttribute("date", rotaDate.ToString("yyyy-MM-dd")),
+                new System.Xml.Linq.XAttribute("exportedAt", DateTime.Now.ToString("o")),
+                
+                new System.Xml.Linq.XElement("Summary",
+                    new System.Xml.Linq.XElement("EmployerTaxPercent", employerTaxRatePercent),
+                    new System.Xml.Linq.XElement("WeeklyGrossCost", FormatCurrency(weeklyStaffCost.TotalCost)),
+                    new System.Xml.Linq.XElement("WeeklyNetCost", FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost))),
+                    new System.Xml.Linq.XElement("TaxAddOn", FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost) - weeklyStaffCost.TotalCost)),
+                    new System.Xml.Linq.XElement("SavedRotaRows", savedRotaRowCount),
+                    new System.Xml.Linq.XElement("CountedAssignments", countedAssignmentRows)
+                ),
+                
+                new System.Xml.Linq.XElement("DailyCosts",
+                    dailyStaffCosts.Select(day =>
+                        new System.Xml.Linq.XElement("Day",
+                            new System.Xml.Linq.XAttribute("name", GetDayName(day.DayOfWeek)),
+                            new System.Xml.Linq.XAttribute("index", day.DayOfWeek),
+                            new System.Xml.Linq.XElement("Gross", FormatCurrency(day.TotalCost)),
+                            new System.Xml.Linq.XElement("AfterTax", FormatCurrency(GetAfterTaxAmount(day.TotalCost)))
+                        )
+                    )
+                ),
+                
+                new System.Xml.Linq.XElement("StaffBreakdown",
+                    staffCostBreakdown.Select(staff =>
+                        new System.Xml.Linq.XElement("Staff",
+                            new System.Xml.Linq.XAttribute("id", staff.EmployeeID),
+                            new System.Xml.Linq.XAttribute("name", staff.EmployeeName),
+                            new System.Xml.Linq.XElement("Gross", FormatCurrency(staff.TotalCost)),
+                            new System.Xml.Linq.XElement("AfterTax", FormatCurrency(GetAfterTaxAmount(staff.TotalCost)))
+                        )
+                    )
+                ),
+                
+                new System.Xml.Linq.XElement("RotaDetails",
+                    rotaRows
+                        .Where(row => !string.IsNullOrWhiteSpace(row.EmployeeID) && 
+                                     row.StaffName != "Unfilled" && 
+                                     row.StaffName != "No staff required")
+                        .Select(row =>
+                            new System.Xml.Linq.XElement("Entry",
+                                new System.Xml.Linq.XAttribute("day", row.Day),
+                                new System.Xml.Linq.XAttribute("staffId", row.EmployeeID),
+                                new System.Xml.Linq.XAttribute("staffName", row.StaffName),
+                                new System.Xml.Linq.XAttribute("startTime", row.StartTime),
+                                new System.Xml.Linq.XAttribute("endTime", row.EndTime)
+                            )
+                        )
+                )
+            )
+        );
+
+        return xml.ToString();
+    }
+
+    private async Task SaveXmlFileToDisk(string content, string fileName)
+    {
+        try
+        {
+            // Try to save to Documents folder first, fall back to Desktop
+            string? destinationPath = null;
+            
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
+            {
+                destinationPath = Path.Combine(documentsPath, fileName);
+            }
+            else
+            {
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (!string.IsNullOrEmpty(desktopPath) && Directory.Exists(desktopPath))
+                {
+                    destinationPath = Path.Combine(desktopPath, fileName);
+                }
+            }
+
+            if (string.IsNullOrEmpty(destinationPath))
+            {
+                // Fallback to current directory if neither works
+                destinationPath = Path.Combine(AppContext.BaseDirectory, fileName);
+            }
+
+            // Write the file
+            await File.WriteAllTextAsync(destinationPath, content);
+            
+            dashboardStatusMessage = $"✓ Export saved successfully to: {destinationPath}";
+            System.Diagnostics.Debug.WriteLine($"XML exported to: {destinationPath}");
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Failed to save file: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"File save error: {ex}");
+            throw;
+        }
+    }
+
+    private async Task ShowXmlModal()
+    {
+        try
+        {
+            var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
+            var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
+            exportedXmlContent = GenerateXmlContent(staffList, savedRows);
+            showXmlModal = true;
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Failed to generate XML: {ex.Message}";
+        }
+    }
+
+    private Task CloseXmlModal()
+    {
+        showXmlModal = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task CopyXmlToClipboard()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", exportedXmlContent);
+            dashboardStatusMessage = "XML copied to clipboard!";
+        }
+        catch (Exception ex)
+        {
+            dashboardStatusMessage = $"Failed to copy: {ex.Message}";
+        }
     }
 }

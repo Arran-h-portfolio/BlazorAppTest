@@ -1,4 +1,4 @@
-namespace BlazorAppTest;
+namespace RotaHub;
 
 public partial class App : Application
 {
@@ -11,7 +11,7 @@ public partial class App : Application
     {
         return new Window(new MainPage())
         {
-            Title = "BlazorAppTest"
+            Title = "RotaHub"
         };
     }
 }

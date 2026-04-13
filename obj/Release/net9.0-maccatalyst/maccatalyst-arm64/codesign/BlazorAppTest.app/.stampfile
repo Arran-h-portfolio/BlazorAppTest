@@ -1,1 +1,0 @@
--v --force --timestamp=none --sign - --entitlements /Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Release/net9.0-maccatalyst/maccatalyst-arm64/Entitlements.xcent /Users/arran/Desktop/Github-Repos/BlazorAppTest/bin/Release/net9.0-maccatalyst/maccatalyst-arm64/BlazorAppTest.app

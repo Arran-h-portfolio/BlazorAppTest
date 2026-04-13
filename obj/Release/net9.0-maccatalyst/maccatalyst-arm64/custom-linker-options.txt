@@ -1,10 +1,10 @@
 AreAnyAssembliesTrimmed=false
-				AssemblyName=BlazorAppTest.dll
+				AssemblyName=RotaHub.dll
 				
 				AOTCompiler=/usr/local/share/dotnet/packs/Microsoft.NETCore.App.Runtime.AOT.osx-arm64.Cross.maccatalyst-arm64/9.0.14/Sdk/../tools/mono-aot-cross
 				AOTOutputDirectory=obj/Release/net9.0-maccatalyst/maccatalyst-arm64/nativelibraries/aot-output/
 				DedupAssembly=
-				AppBundleManifestPath=bin/Release/net9.0-maccatalyst/maccatalyst-arm64/BlazorAppTest.app/Contents/Info.plist
+				AppBundleManifestPath=bin/Release/net9.0-maccatalyst/maccatalyst-arm64/RotaHub.app/Contents/Info.plist
 				CacheDirectory=/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/Release/net9.0-maccatalyst/maccatalyst-arm64/linker-cache
 				
 				Debug=false
@@ -212,7 +212,7 @@ MonoLibrary=/usr/local/share/dotnet/packs/Microsoft.NETCore.App.Runtime.Mono.mac
 				PartialStaticRegistrarLibrary=/Users/arran/.nuget/packages/microsoft.maccatalyst.runtime.maccatalyst-arm64.net9.0_26.2/26.2.9000/runtimes/maccatalyst-arm64/native/Microsoft.MacCatalyst.registrar.a
 				Platform=MacCatalyst
 				PlatformAssembly=Microsoft.MacCatalyst.dll
-				RelativeAppBundlePath=../BlazorAppTest.app/
+				RelativeAppBundlePath=../RotaHub.app/
 				Registrar=managed-static
 				
 				RequireLinkWithAttributeForObjectiveCClassSearch=

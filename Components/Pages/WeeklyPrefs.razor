@@ -227,6 +227,8 @@
     private string saveMessageCssClass = "alert-success";
     private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
+    @* Below states trying local storage for all saved constraints first *@
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -293,6 +295,8 @@
             StateHasChanged();
         }
     }
+
+    @* Below saves all the weekly preferences and constraints *@
 
     async Task SaveWeeklyPrefs()
     {
@@ -398,6 +402,8 @@
         return weeklyJobRoles.JobRoles.Any()
             && weeklyJobRoles.JobRoles.All(role => dailyJobRoles.JobRolesByDay[day].Contains(role));
     }
+
+    @* BELOW FUNCTION ADDS NEW ITEMS TO LISTS CREATED *@
 
     private void EnsurePreferenceData()
     {

@@ -1,4 +1,4 @@
-namespace BlazorAppTest;
+namespace RotaHub;
 
 public partial class MainPage : ContentPage
 {
