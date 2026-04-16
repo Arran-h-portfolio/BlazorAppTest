@@ -36,17 +36,29 @@
 		<data>
 		y7VDGR0TihbZiltAhidaFhdXAFQ=
 		</data>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css</key>
+		<data>
+		hsN8rHaN4ISSwOPeNO72VYlBYJk=
+		</data>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css.br</key>
+		<data>
+		UM6hhKb3ZJm5ThnOvPamNNbCYlQ=
+		</data>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css.gz</key>
+		<data>
+		GV897GE7PNbWKGSgDFrR4js6lWY=
+		</data>
 		<key>Resources/wwwroot/RotaHub.styles.css</key>
 		<data>
-		bVOX7i4um4oaKXZUBQay85vr608=
+		hsN8rHaN4ISSwOPeNO72VYlBYJk=
 		</data>
 		<key>Resources/wwwroot/RotaHub.styles.css.br</key>
 		<data>
-		kmLm1QwBQkeOHuSZ8P9t5CfvwxE=
+		UM6hhKb3ZJm5ThnOvPamNNbCYlQ=
 		</data>
 		<key>Resources/wwwroot/RotaHub.styles.css.gz</key>
 		<data>
-		y7VDGR0TihbZiltAhidaFhdXAFQ=
+		GV897GE7PNbWKGSgDFrR4js6lWY=
 		</data>
 		<key>Resources/wwwroot/app.css</key>
 		<data>
@@ -913,14 +925,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			icWyd3LOmLh5HBecNcP9xDcWe+toCsf2E9rGkyvJ7Ck=
+			KOPMoLRAAWmGDDs9wwkppIKu93a78UwRSF4YP1AHps0=
 			</data>
 		</dict>
 		<key>MonoBundle/RotaHub.pdb</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			5NYuIrPJJcqds0vZ0zUXxZLYgBmdVArEGYn05ZFAXWk=
+			BrtLauF9hC3fhB7BikAmhjwTTeQtb8ia1XFieWm+epo=
 			</data>
 		</dict>
 		<key>MonoBundle/System.AppContext.dll</key>
@@ -2379,25 +2391,46 @@
 			89vgQEWNuPsnsdRUMcemxSMbwGIncVBfiG2G1115Ipg=
 			</data>
 		</dict>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			YVdHPZQAeN+lqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css.br</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FR9ThM88JFUYP3LVjTd3GEggsExZFmb6ranq6rh5FhM=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css.gz</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3Li2o5HcGYx5WFAIxID4wKH2a6PCI1zQoUxrFZVhm6s=
+			</data>
+		</dict>
 		<key>Resources/wwwroot/RotaHub.styles.css</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			uglW05eQUWlC6EiC9w77xToi8xJuCqcHKmZ/v5uKEA8=
+			YVdHPZQAeN+lqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/RotaHub.styles.css.br</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			+TiAAYOrETJMSNOqOVrzmFdyaLFWEmiLV+F+WRzTJbw=
+			FR9ThM88JFUYP3LVjTd3GEggsExZFmb6ranq6rh5FhM=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/RotaHub.styles.css.gz</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			89vgQEWNuPsnsdRUMcemxSMbwGIncVBfiG2G1115Ipg=
+			3Li2o5HcGYx5WFAIxID4wKH2a6PCI1zQoUxrFZVhm6s=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/app.css</key>
