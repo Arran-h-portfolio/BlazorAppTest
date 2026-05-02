@@ -1,4 +1,5 @@
-﻿@page "/StaffManager" //This is a reference to the href name in the NavMenu.razor file
+﻿@* This route matches the Staff Manager nav link. *@
+@page "/StaffManager"
 @using DayRequirements.Models
 @using StaffInput.Models
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
@@ -7,196 +8,255 @@
 
 <PageTitle>Staff Manager</PageTitle>
 
-<h1>Staffing</h1>
-
-<p>This is where you can see all staff currently employed 
-    and whether they are currently active and available to be added to the rota.</p>
-
-<button class="btn btn-primary" @onclick="ShowInput">Add Staff</button>
-
-@if (!string.IsNullOrWhiteSpace(statusMessage))
-{
-    <div class="alert alert-info mt-3" role="alert">@statusMessage</div>
-}
-
-@if (showInput)
-{
-    <div class="input-container mb-3">
-        <input class="form-control mb-2" @bind="newStaffName" placeholder="Enter Staff Name" />
-
-        <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="isManager" @bind="newIsManager" />
-            <label class="form-check-label" for="isManager">Manager</label>
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">Working Days</label>
-            <div class="d-flex flex-wrap gap-2">
-                @foreach (var day in WeekDays)
-                {
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="day_@day" checked="@newWorkingDays.Contains(day)" @onchange="@(e => ToggleDay(e, day))" />
-                        <label class="form-check-label" for="day_@day">@day</label>
-                    </div>
-                }
+<div class="staff-page">
+    <header class="staff-header card">
+        <div class="card-body staff-header-body">
+            <div>
+                <h1>Staffing</h1>
+                <p class="mb-0">Manage your team, keep availability current, and control who can be added to weekly rotas.</p>
             </div>
+            <button class="btn btn-primary" @onclick="ShowInput">Add staff</button>
         </div>
+    </header>
 
-        <div class="mb-3">
-            <label class="form-label" for="preferredDaysPerWeek">Preferred days per week</label>
-            <input id="preferredDaysPerWeek" class="form-control" type="number" min="0" max="7" @bind="newPreferredDaysPerWeek" />
-            <div class="form-text">Used by the rota to balance full-time and part-time shift allocation fairly.</div>
-        </div>
+    <p class="page-help-text">Use this page to track active staff, preferred working patterns, job roles, and weekly availability.</p>
 
-        <div class="mb-3">
-            <label class="form-label" for="startTime">Start Time</label>
-            @if (availableStartTimes.Any())
-            {
-                <select id="startTime" class="form-select" @bind="newStartTime">
-                    <option value="">Select a start time</option>
-                    @foreach (var time in availableStartTimes)
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert alert-info mt-3 status-banner" role="alert">@statusMessage</div>
+    }
+
+    @if (showInput)
+    {
+        <section class="input-container card">
+            <div class="card-body staff-form-body">
+                <div class="form-heading-row">
+                    <h2 class="form-title">Add staff member</h2>
+                    <p class="text-muted mb-0">Create a profile with working days, roles, and preferred shift details.</p>
+                </div>
+
+                <div class="form-field-group">
+                    <label class="form-label" for="newStaffName">Full name</label>
+                    <input id="newStaffName" class="form-control" @bind="newStaffName" placeholder="e.g. Alex Johnson" />
+                </div>
+
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="isManager" @bind="newIsManager" />
+                    <label class="form-check-label" for="isManager">Manager</label>
+                </div>
+
+                <div class="form-field-group">
+                    <label class="form-label">Working days</label>
+                    <div class="day-chip-row">
+                        @foreach (var day in WeekDays)
+                        {
+                            <label class="day-chip @(newWorkingDays.Contains(day) ? "day-chip--active" : "")">
+                                <input type="checkbox" id="day_@day" checked="@newWorkingDays.Contains(day)" @onchange="@(e => ToggleDay(e, day))" />
+                                @day.Substring(0, 3)
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-field-group">
+                        <label class="form-label" for="preferredDaysPerWeek">Preferred days / week</label>
+                        <input id="preferredDaysPerWeek" class="form-control" type="number" min="0" max="7" @bind="newPreferredDaysPerWeek" />
+                        <div class="form-text">Used to balance full-time and part-time allocations.</div>
+                    </div>
+                    <div class="form-field-group">
+                        <label class="form-label" for="hourlyWage">Hourly wage (£)</label>
+                        <input id="hourlyWage" class="form-control" @bind="newHourlyWage" placeholder="0.00" type="number" min="0" step="0.01" />
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-field-group">
+                        <label class="form-label" for="startTime">Start time</label>
+                        @if (availableStartTimes.Any())
+                        {
+                            <select id="startTime" class="form-select" @bind="newStartTime">
+                                <option value="">Select start time</option>
+                                @foreach (var time in availableStartTimes)
+                                {
+                                    <option value="@time">@time</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input id="startTime" class="form-control" type="time" value="@newStartTime" @onchange="OnStartTimeChanged" />
+                            <div class="form-text">No configured start times found.</div>
+                        }
+                    </div>
+                    <div class="form-field-group">
+                        <label class="form-label" for="endTime">End time</label>
+                        @if (availableEndTimes.Any())
+                        {
+                            <select id="endTime" class="form-select" @bind="newEndTime">
+                                <option value="">Select end time</option>
+                                @foreach (var time in availableEndTimes)
+                                {
+                                    <option value="@time">@time</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input id="endTime" class="form-control" type="time" value="@newEndTime" @onchange="OnEndTimeChanged" />
+                            <div class="form-text">No configured end times found.</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-field-group">
+                    <label class="form-label">Job roles</label>
+                    @if (availableJobRoles.Any())
                     {
-                        <option value="@time">@time</option>
-                    }
-                </select>
-            }
-            else
-            {
-                <input id="startTime" class="form-control" type="time" value="@newStartTime" @onchange="OnStartTimeChanged" />
-                <div class="form-text">No configured weekly start times found yet.</div>
-            }
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="endTime">End Time</label>
-            @if (availableEndTimes.Any())
-            {
-                <select id="endTime" class="form-select" @bind="newEndTime">
-                    <option value="">Select an end time</option>
-                    @foreach (var time in availableEndTimes)
-                    {
-                        <option value="@time">@time</option>
-                    }
-                </select>
-            }
-            else
-            {
-                <input id="endTime" class="form-control" type="time" value="@newEndTime" @onchange="OnEndTimeChanged" />
-                <div class="form-text">No configured weekly end times found yet.</div>
-            }
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Job Roles</label>
-            @if (availableJobRoles.Any())
-            {
-                <div class="d-flex flex-wrap gap-2">
-                    @foreach (var role in availableJobRoles)
-                    {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="role_@role" checked="@newJobRoles.Contains(role)" @onchange="@(e => ToggleJobRole(e, role))" />
-                            <label class="form-check-label" for="role_@role">@role</label>
+                        <div class="role-chip-row">
+                            @foreach (var role in availableJobRoles)
+                            {
+                                <label class="role-chip @(newJobRoles.Contains(role) ? "role-chip--active" : "")">
+                                    <input type="checkbox" id="role_@role" checked="@newJobRoles.Contains(role)" @onchange="@(e => ToggleJobRole(e, role))" />
+                                    @role
+                                </label>
+                            }
                         </div>
                     }
+                    else
+                    {
+                        <p class="form-text mb-0">No job roles configured yet. Set them up in <strong>Weekly Preferences</strong>.</p>
+                    }
+                </div>
+
+                <div class="form-info-note">
+                    Daily availability will be initialised from <strong>Working days</strong>. You can refine it per-day from the staff list.
+                </div>
+
+                <div class="form-action-row">
+                    <button class="btn btn-primary" @onclick="SaveStaff">Save staff member</button>
+                    <button class="btn btn-ghost" @onclick="CancelAddStaff">Cancel</button>
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="staff-list-section card">
+        <div class="card-body">
+            <div class="section-title-row">
+                <h2>Current staff</h2>
+                <span class="staff-count-badge">@staffList.Count staff</span>
+            </div>
+
+            @if (!staffList.Any())
+            {
+                <div class="empty-state">
+                    <svg class="empty-state-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="18" r="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M8 40c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    <p class="empty-state-title">No staff members yet</p>
+                    <p class="empty-state-body">Select <strong>Add staff</strong> above to create your first team member.</p>
                 </div>
             }
             else
             {
-                <div class="form-text">No job roles configured yet. Configure them in Weekly Preferences.</div>
+                <div class="table-responsive">
+                    <table class="staff-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Roles</th>
+                                <th>Available days</th>
+                                <th>Pref. days</th>
+                                <th>Hourly wage</th>
+                                <th>This week</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var staff in staffList)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="staff-name">@staff.NewStaffName</span>
+                                        @if (staff.IsManager)
+                                        {
+                                            <span class="role-pill role-pill--manager">Manager</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (staff.JobRoles.Any())
+                                        {
+                                            <div class="pill-list">
+                                                @foreach (var role in staff.JobRoles)
+                                                {
+                                                    <span class="role-pill">@role</span>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="cell-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var availableDays = staff.DailyAvailability
+                                                .Where(x => x.Value)
+                                                .Select(x => GetDayAbbreviation(x.Key))
+                                                .ToList();
+                                        }
+                                        @if (availableDays.Any())
+                                        {
+                                            <span class="day-pill">@string.Join(" · ", availableDays)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="cell-muted">None</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="stat-value">@GetPreferredDaysDisplay(staff)</span>
+                                    </td>
+                                    <td>
+                                        <span class="wage-value">@FormatHourlyWage(staff.HourlyWage)</span>
+                                    </td>
+                                    <td>
+                                        <label class="toggle-switch" title="Toggle availability this week">
+                                            <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
+                                            <span class="toggle-track"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <div class="action-group">
+                                            <button class="btn-action" title="Edit availability" @onclick="@(() => ShowEditAvailability(staff))">
+                                                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 11L11.5 1.5a1.414 1.414 0 012 2L5 13H2v-2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                Days
+                                            </button>
+                                            <button class="btn-action" title="Edit staff details" @onclick="@(() => ShowEditStaffDetails(staff))">
+                                                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                                                Edit
+                                            </button>
+                                            <button class="btn-action btn-action--danger" title="Delete staff member" @onclick="@(() => DeleteStaffWithConfirmation(staff))">
+                                                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="hourlyWage">Hourly Wage</label>
-            <input id="hourlyWage" class="form-control" @bind="newHourlyWage" placeholder="Enter hourly wage" type="number" min="0" step="0.01" />
-        </div>
-
-        <div class="alert alert-info mt-3" role="alert">
-            Daily availability will be set from the <strong>Working Days</strong> selected above.
-            You can still edit individual days later from the staff list.
-        </div>
-
-        <button class="btn btn-primary" @onclick="SaveStaff">Save</button>
-        <button class="btn btn-secondary" @onclick="CancelAddStaff">Cancel</button>
-    </div>
-}
-
-<h2>Current Staff</h2>
-
-@if (!staffList.Any())
-{
-    <p>No staff have been added yet.</p>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Job Roles</th>
-                <th>Available Days</th>
-                <th>Preferred days</th>
-                <th>Hourly wage</th>
-                <th>Available this week</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var staff in staffList)
-            {
-                <tr>
-                    <td>@staff.NewStaffName</td>
-                    <td>
-                        @if (staff.JobRoles.Any())
-                        {
-                            <span class="badge bg-info">@string.Join(", ", staff.JobRoles)</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted">No roles assigned</span>
-                        }
-                    </td>
-                    <td>
-                        @{
-                            var availableDays = staff.DailyAvailability
-                                .Where(x => x.Value)
-                                .Select(x => GetDayAbbreviation(x.Key))
-                                .ToList();
-                        }
-                        @if (availableDays.Any())
-                        {
-                            <span class="badge bg-success">@string.Join(", ", availableDays)</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted">No days available</span>
-                        }
-                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="@(() => ShowEditAvailability(staff))">Edit</button>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">@GetPreferredDaysDisplay(staff)</span>
-                    </td>
-                    <td>
-                        <span class="badge bg-warning text-dark">@FormatHourlyWage(staff.HourlyWage)</span>
-                    </td>
-                    <td>
-                        <input type="checkbox" checked="@staff.IsAvailableThisWeek" @onchange="@(e => ToggleAvailability(e, staff))" />
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="@(() => ShowEditStaffDetails(staff))">Edit details</button>
-                        <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteStaffWithConfirmation(staff))">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    </section>
 
 @if (showEditAvailability && editingStaff != null)
 {
-    <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal d-block staff-modal-backdrop" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content staff-modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Weekly Availability - @editingStaff.NewStaffName</h5>
                     <button type="button" class="btn-close" @onclick="CloseEditAvailability"></button>
@@ -227,9 +287,9 @@ else
 
 @if (showEditStaffDetails && staffDetailsToEdit != null)
 {
-    <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal d-block staff-modal-backdrop" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+            <div class="modal-content staff-modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Staff Details - @staffDetailsToEdit.NewStaffName</h5>
                     <button type="button" class="btn-close" @onclick="CloseEditStaffDetails"></button>
@@ -353,6 +413,8 @@ else
         </div>
     </div>
 }
+
+</div>
 
 @code 
 {
@@ -815,12 +877,6 @@ else
         }
 
         staff.IsAvailableThisWeek = isChecked;
-
-        // Override daily availability based on the "Available this week" checkbox
-        foreach (var day in WeekDays)
-        {
-            staff.DailyAvailability[day] = isChecked;
-        }
 
         await SaveStaffListAsync();
     }

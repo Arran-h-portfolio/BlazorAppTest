@@ -1,52 +1,58 @@
 @page "/dashboard"
 @using StaffCost.Models
 @using StaffInput.Models
+@using ClosedXML.Excel
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IJSRuntime JS
 
 <PageTitle>Dashboard</PageTitle>
 
-<section class="dashboard">
-    <div class="dashboard-header">
-        <div>
+<section class="dashboard dashboard-page">
+    <header class="dashboard-header card">
+        <div class="dashboard-header-body">
+            <div class="dashboard-title-block">
             <h1>Cost Dashboard</h1>
             <p>Live totals based on your saved rota and current staff hourly wages.</p>
-        </div>
-        <div class="dashboard-actions">
-            <div class="date-selector">
-                <label for="rotaDate" class="form-label mb-1">Rota Date</label>
+                <span class="dashboard-subnote">Review weekly staffing cost, tax uplift, and export-ready payroll data in one place.</span>
+            </div>
+            <div class="dashboard-actions">
+                <div class="date-selector dashboard-control">
+                    <label for="rotaDate" class="form-label mb-1">Rota date</label>
                 <input id="rotaDate" class="form-control" type="date" @bind="rotaDate" />
-            </div>
-            <div class="tax-rate-control">
-                <label for="employerTaxRate" class="form-label mb-1">Employer tax (%)</label>
+                </div>
+                <div class="tax-rate-control dashboard-control">
+                    <label for="employerTaxRate" class="form-label mb-1">Employer tax (%)</label>
                 <input id="employerTaxRate" class="form-control" type="number" min="0" max="100" step="0.1" @bind="employerTaxRatePercent" @bind:after="OnTaxRateChanged" />
+                </div>
+                <div class="dashboard-button-row">
+                    <button class="btn btn-primary" @onclick="RefreshDashboard" disabled="@isLoadingDashboard">Refresh</button>
+                    <button class="btn btn-secondary" @onclick="ExportToExcel" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">Export Excel</button>
+                    <button class="btn btn-outline-secondary" @onclick="ShowExportModal" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">View Export</button>
+                </div>
             </div>
-            <button class="btn-primary" @onclick="RefreshDashboard" disabled="@isLoadingDashboard">Refresh</button>
-            <button class="btn-secondary" @onclick="ExportToXml" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">Export XML</button>
-            <button class="btn-outline-secondary" @onclick="ShowXmlModal" disabled="@(isLoadingDashboard || weeklyStaffCost.TotalCost == 0)">View XML</button>
         </div>
-    </div>
+    </header>
 
     @if (!string.IsNullOrWhiteSpace(dashboardStatusMessage))
     {
-        <div class="alert alert-info" role="alert">@dashboardStatusMessage</div>
+        <div class="alert alert-info dashboard-status" role="alert">@dashboardStatusMessage</div>
     }
 
-    @if (showXmlModal && !string.IsNullOrWhiteSpace(exportedXmlContent))
+    @if (showExportModal && !string.IsNullOrWhiteSpace(exportedCsvContent))
     {
-        <div class="modal-backdrop" @onclick="CloseXmlModal"></div>
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-backdrop dashboard-modal-backdrop" @onclick="CloseExportModal"></div>
+        <div class="modal-dialog dashboard-modal-dialog">
+            <div class="modal-content dashboard-modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">XML Export Preview</h5>
-                    <button type="button" class="btn-close" @onclick="CloseXmlModal"></button>
+                    <h5 class="modal-title">Export Data Preview</h5>
+                    <button type="button" class="btn-close" @onclick="CloseExportModal"></button>
                 </div>
                 <div class="modal-body">
-                    <textarea class="form-control" style="height: 400px; font-family: monospace; font-size: 11px;" readonly>@exportedXmlContent</textarea>
+                    <textarea class="form-control" style="height: 400px; font-family: monospace; font-size: 11px;" readonly>@exportedCsvContent</textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseXmlModal">Close</button>
-                    <button type="button" class="btn btn-primary" @onclick="CopyXmlToClipboard">Copy to Clipboard</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseExportModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="CopyExportToClipboard">Copy to Clipboard</button>
                 </div>
             </div>
         </div>
@@ -54,21 +60,24 @@
 
     @if (isLoadingDashboard)
     {
-        <p class="text-muted">Loading dashboard data...</p>
+        <p class="text-muted dashboard-loading">Loading dashboard data...</p>
     }
     else
     {
         <div class="dashboard-cards">
             <article class="dashboard-card total">
+                <span class="dashboard-card-kicker">Weekly total</span>
                 <h2>Total Staff Cost (Week)</h2>
                 <p class="mb-1"><strong>Gross:</strong> @FormatCurrency(weeklyStaffCost.TotalCost)</p>
                 <p class="big"><strong>After Tax:</strong> @FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost))</p>
             </article>
             <article class="dashboard-card">
+                <span class="dashboard-card-kicker">Volume</span>
                 <h2>Saved Rota Rows</h2>
                 <p class="big">@savedRotaRowCount</p>
             </article>
             <article class="dashboard-card">
+                <span class="dashboard-card-kicker">Counted</span>
                 <h2>Paid Assignments Counted</h2>
                 <p class="big">@countedAssignmentRows</p>
             </article>
@@ -76,8 +85,11 @@
 
         <div class="dashboard-grid">
             <section class="panel">
-                <h3>Total Staff Cost Per Day</h3>
-                <table class="table table-striped mb-0">
+                <div class="panel-header">
+                    <h3>Total Staff Cost Per Day</h3>
+                    <span class="panel-note">Gross vs after-tax view</span>
+                </div>
+                <table class="table dashboard-table mb-0">
                     <thead>
                         <tr>
                             <th>Day</th>
@@ -99,10 +111,13 @@
             </section>
 
             <section class="panel">
-                <h3>Staff Cost Breakdown</h3>
+                <div class="panel-header">
+                    <h3>Staff Cost Breakdown</h3>
+                    <span class="panel-note">Per employee summary</span>
+                </div>
                 @if (staffCostBreakdown.Any())
                 {
-                    <table class="table table-striped mb-0">
+                    <table class="table dashboard-table mb-0">
                         <thead>
                             <tr>
                                 <th>Staff</th>
@@ -131,7 +146,10 @@
 
         <div class="dashboard-grid chart-grid mt-3">
             <section class="panel">
-                <h3>Who Costs More Per Week (Hours Worked)</h3>
+                <div class="panel-header">
+                    <h3>Who Costs More Per Week (Hours Worked)</h3>
+                    <span class="panel-note">Share of gross weekly cost</span>
+                </div>
                 @if (staffCostBreakdown.Any())
                 {
                     var staffSlices = GetStaffCostPieSlices();
@@ -156,7 +174,10 @@
             </section>
 
             <section class="panel">
-                <h3>Gross vs Tax Add-On</h3>
+                <div class="panel-header">
+                    <h3>Gross vs Tax Add-On</h3>
+                    <span class="panel-note">Employer uplift composition</span>
+                </div>
                 @if (weeklyStaffCost.TotalCost > 0)
                 {
                     var taxSlices = GetTaxCompositionPieSlices();
@@ -190,8 +211,8 @@
     private int countedAssignmentRows = 0;
     private decimal employerTaxRatePercent = 20m;
     private DateOnly rotaDate = new();
-    private bool showXmlModal = false;
-    private string exportedXmlContent = string.Empty;
+    private bool showExportModal = false;
+    private string exportedCsvContent = string.Empty;
     private readonly string[] PieChartColors =
     {
         "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#84cc16"
@@ -446,20 +467,20 @@
         return $"£{amount:0.00}";
     }
 
-    private async Task ExportToXml()
+    private async Task ExportToExcel()
     {
         try
         {
-            dashboardStatusMessage = "Generating export...";
+            dashboardStatusMessage = "Generating Excel export...";
             StateHasChanged();
             
             var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
             var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
 
-            var xmlContent = GenerateXmlContent(staffList, savedRows);
-            var fileName = $"rota_export_{rotaDate:yyyy-MM-dd}.xml";
+            var excelBytes = GenerateExcelFile(staffList, savedRows);
+            var fileName = $"rota_export_{rotaDate:yyyy-MM-dd}.xlsx";
             
-            await SaveXmlFileToDisk(xmlContent, fileName);
+            await SaveExportFileToDisk(excelBytes, fileName);
         }
         catch (Exception ex)
         {
@@ -468,67 +489,145 @@
         }
     }
 
-    private string GenerateXmlContent(List<StaffInput> staffList, List<DashboardRotaRow> rotaRows)
+    private string GenerateCsvContent(List<StaffInput> staffList, List<DashboardRotaRow> rotaRows)
     {
-        var xml = new System.Xml.Linq.XDocument(
-            new System.Xml.Linq.XDeclaration("1.0", "utf-8", "yes"),
-            new System.Xml.Linq.XElement("RotaExport",
-                new System.Xml.Linq.XAttribute("date", rotaDate.ToString("yyyy-MM-dd")),
-                new System.Xml.Linq.XAttribute("exportedAt", DateTime.Now.ToString("o")),
-                
-                new System.Xml.Linq.XElement("Summary",
-                    new System.Xml.Linq.XElement("EmployerTaxPercent", employerTaxRatePercent),
-                    new System.Xml.Linq.XElement("WeeklyGrossCost", FormatCurrency(weeklyStaffCost.TotalCost)),
-                    new System.Xml.Linq.XElement("WeeklyNetCost", FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost))),
-                    new System.Xml.Linq.XElement("TaxAddOn", FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost) - weeklyStaffCost.TotalCost)),
-                    new System.Xml.Linq.XElement("SavedRotaRows", savedRotaRowCount),
-                    new System.Xml.Linq.XElement("CountedAssignments", countedAssignmentRows)
-                ),
-                
-                new System.Xml.Linq.XElement("DailyCosts",
-                    dailyStaffCosts.Select(day =>
-                        new System.Xml.Linq.XElement("Day",
-                            new System.Xml.Linq.XAttribute("name", GetDayName(day.DayOfWeek)),
-                            new System.Xml.Linq.XAttribute("index", day.DayOfWeek),
-                            new System.Xml.Linq.XElement("Gross", FormatCurrency(day.TotalCost)),
-                            new System.Xml.Linq.XElement("AfterTax", FormatCurrency(GetAfterTaxAmount(day.TotalCost)))
-                        )
-                    )
-                ),
-                
-                new System.Xml.Linq.XElement("StaffBreakdown",
-                    staffCostBreakdown.Select(staff =>
-                        new System.Xml.Linq.XElement("Staff",
-                            new System.Xml.Linq.XAttribute("id", staff.EmployeeID),
-                            new System.Xml.Linq.XAttribute("name", staff.EmployeeName),
-                            new System.Xml.Linq.XElement("Gross", FormatCurrency(staff.TotalCost)),
-                            new System.Xml.Linq.XElement("AfterTax", FormatCurrency(GetAfterTaxAmount(staff.TotalCost)))
-                        )
-                    )
-                ),
-                
-                new System.Xml.Linq.XElement("RotaDetails",
-                    rotaRows
-                        .Where(row => !string.IsNullOrWhiteSpace(row.EmployeeID) && 
-                                     row.StaffName != "Unfilled" && 
-                                     row.StaffName != "No staff required")
-                        .Select(row =>
-                            new System.Xml.Linq.XElement("Entry",
-                                new System.Xml.Linq.XAttribute("day", row.Day),
-                                new System.Xml.Linq.XAttribute("staffId", row.EmployeeID),
-                                new System.Xml.Linq.XAttribute("staffName", row.StaffName),
-                                new System.Xml.Linq.XAttribute("startTime", row.StartTime),
-                                new System.Xml.Linq.XAttribute("endTime", row.EndTime)
-                            )
-                        )
-                )
-            )
-        );
+        var builder = new System.Text.StringBuilder();
 
-        return xml.ToString();
+        builder.AppendLine("Section,Metric,Value");
+        builder.AppendLine($"Summary,Export Date,{EscapeCsv(rotaDate.ToString("yyyy-MM-dd"))}");
+        builder.AppendLine($"Summary,Exported At,{EscapeCsv(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))}");
+        builder.AppendLine($"Summary,Employer Tax Percent,{employerTaxRatePercent:0.##}%");
+        builder.AppendLine($"Summary,Weekly Gross Cost,{FormatCurrency(weeklyStaffCost.TotalCost)}");
+        builder.AppendLine($"Summary,Weekly After Tax Cost,{FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost))}");
+        builder.AppendLine($"Summary,Tax Add-On,{FormatCurrency(GetAfterTaxAmount(weeklyStaffCost.TotalCost) - weeklyStaffCost.TotalCost)}");
+        builder.AppendLine($"Summary,Saved Rota Rows,{savedRotaRowCount}");
+        builder.AppendLine($"Summary,Counted Assignments,{countedAssignmentRows}");
+
+        builder.AppendLine();
+        builder.AppendLine("Daily Costs");
+        builder.AppendLine("Day,Gross,After Tax");
+        foreach (var day in dailyStaffCosts)
+        {
+            builder.AppendLine($"{EscapeCsv(GetDayName(day.DayOfWeek))},{EscapeCsv(FormatCurrency(day.TotalCost))},{EscapeCsv(FormatCurrency(GetAfterTaxAmount(day.TotalCost)))}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("Staff Breakdown");
+        builder.AppendLine("Employee ID,Employee Name,Gross,After Tax");
+        foreach (var staff in staffCostBreakdown)
+        {
+            builder.AppendLine($"{EscapeCsv(staff.EmployeeID)},{EscapeCsv(staff.EmployeeName)},{EscapeCsv(FormatCurrency(staff.TotalCost))},{EscapeCsv(FormatCurrency(GetAfterTaxAmount(staff.TotalCost)))}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("Rota Details");
+        builder.AppendLine("Day,Staff ID,Staff Name,Start Time,End Time");
+        foreach (var row in rotaRows.Where(row => !string.IsNullOrWhiteSpace(row.EmployeeID)
+            && row.StaffName != "Unfilled"
+            && row.StaffName != "No staff required"))
+        {
+            builder.AppendLine($"{EscapeCsv(row.Day)},{EscapeCsv(row.EmployeeID)},{EscapeCsv(row.StaffName)},{EscapeCsv(row.StartTime)},{EscapeCsv(row.EndTime)}");
+        }
+
+        return builder.ToString();
     }
 
-    private async Task SaveXmlFileToDisk(string content, string fileName)
+    private byte[] GenerateExcelFile(List<StaffInput> staffList, List<DashboardRotaRow> rotaRows)
+    {
+        using var workbook = new XLWorkbook();
+
+        var summarySheet = workbook.Worksheets.Add("Summary");
+        summarySheet.Cell(1, 1).Value = "Metric";
+        summarySheet.Cell(1, 2).Value = "Value";
+        summarySheet.Cell(2, 1).Value = "Export Date";
+        summarySheet.Cell(2, 2).Value = rotaDate.ToString("yyyy-MM-dd");
+        summarySheet.Cell(3, 1).Value = "Exported At";
+        summarySheet.Cell(3, 2).Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        summarySheet.Cell(4, 1).Value = "Employer Tax Percent";
+        summarySheet.Cell(4, 2).Value = employerTaxRatePercent / 100m;
+        summarySheet.Cell(4, 2).Style.NumberFormat.Format = "0.00%";
+        summarySheet.Cell(5, 1).Value = "Weekly Gross Cost";
+        summarySheet.Cell(5, 2).Value = weeklyStaffCost.TotalCost;
+        summarySheet.Cell(6, 1).Value = "Weekly After Tax Cost";
+        summarySheet.Cell(6, 2).Value = GetAfterTaxAmount(weeklyStaffCost.TotalCost);
+        summarySheet.Cell(7, 1).Value = "Tax Add-On";
+        summarySheet.Cell(7, 2).Value = GetAfterTaxAmount(weeklyStaffCost.TotalCost) - weeklyStaffCost.TotalCost;
+        summarySheet.Cell(8, 1).Value = "Saved Rota Rows";
+        summarySheet.Cell(8, 2).Value = savedRotaRowCount;
+        summarySheet.Cell(9, 1).Value = "Counted Assignments";
+        summarySheet.Cell(9, 2).Value = countedAssignmentRows;
+
+        summarySheet.Range(1, 1, 1, 2).Style.Font.Bold = true;
+        summarySheet.Range(5, 2, 7, 2).Style.NumberFormat.Format = "\u00A3#,##0.00";
+        summarySheet.Columns().AdjustToContents();
+
+        var dailySheet = workbook.Worksheets.Add("Daily Costs");
+        dailySheet.Cell(1, 1).Value = "Day";
+        dailySheet.Cell(1, 2).Value = "Gross";
+        dailySheet.Cell(1, 3).Value = "After Tax";
+
+        var dailyRow = 2;
+        foreach (var day in dailyStaffCosts)
+        {
+            dailySheet.Cell(dailyRow, 1).Value = GetDayName(day.DayOfWeek);
+            dailySheet.Cell(dailyRow, 2).Value = day.TotalCost;
+            dailySheet.Cell(dailyRow, 3).Value = GetAfterTaxAmount(day.TotalCost);
+            dailyRow++;
+        }
+
+        dailySheet.Range(1, 1, 1, 3).Style.Font.Bold = true;
+        dailySheet.Range(2, 2, Math.Max(2, dailyRow - 1), 3).Style.NumberFormat.Format = "\u00A3#,##0.00";
+        dailySheet.Columns().AdjustToContents();
+
+        var staffSheet = workbook.Worksheets.Add("Staff Breakdown");
+        staffSheet.Cell(1, 1).Value = "Employee ID";
+        staffSheet.Cell(1, 2).Value = "Employee Name";
+        staffSheet.Cell(1, 3).Value = "Gross";
+        staffSheet.Cell(1, 4).Value = "After Tax";
+
+        var staffRow = 2;
+        foreach (var staff in staffCostBreakdown)
+        {
+            staffSheet.Cell(staffRow, 1).Value = staff.EmployeeID;
+            staffSheet.Cell(staffRow, 2).Value = staff.EmployeeName;
+            staffSheet.Cell(staffRow, 3).Value = staff.TotalCost;
+            staffSheet.Cell(staffRow, 4).Value = GetAfterTaxAmount(staff.TotalCost);
+            staffRow++;
+        }
+
+        staffSheet.Range(1, 1, 1, 4).Style.Font.Bold = true;
+        staffSheet.Range(2, 3, Math.Max(2, staffRow - 1), 4).Style.NumberFormat.Format = "\u00A3#,##0.00";
+        staffSheet.Columns().AdjustToContents();
+
+        var rotaSheet = workbook.Worksheets.Add("Rota Details");
+        rotaSheet.Cell(1, 1).Value = "Day";
+        rotaSheet.Cell(1, 2).Value = "Staff ID";
+        rotaSheet.Cell(1, 3).Value = "Staff Name";
+        rotaSheet.Cell(1, 4).Value = "Start Time";
+        rotaSheet.Cell(1, 5).Value = "End Time";
+
+        var rotaRow = 2;
+        foreach (var row in rotaRows.Where(row => !string.IsNullOrWhiteSpace(row.EmployeeID)
+            && row.StaffName != "Unfilled"
+            && row.StaffName != "No staff required"))
+        {
+            rotaSheet.Cell(rotaRow, 1).Value = row.Day;
+            rotaSheet.Cell(rotaRow, 2).Value = row.EmployeeID;
+            rotaSheet.Cell(rotaRow, 3).Value = row.StaffName;
+            rotaSheet.Cell(rotaRow, 4).Value = row.StartTime;
+            rotaSheet.Cell(rotaRow, 5).Value = row.EndTime;
+            rotaRow++;
+        }
+
+        rotaSheet.Range(1, 1, 1, 5).Style.Font.Bold = true;
+        rotaSheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    private async Task SaveExportFileToDisk(byte[] content, string fileName)
     {
         try
         {
@@ -556,10 +655,10 @@
             }
 
             // Write the file
-            await File.WriteAllTextAsync(destinationPath, content);
+            await File.WriteAllBytesAsync(destinationPath, content);
             
             dashboardStatusMessage = $"✓ Export saved successfully to: {destinationPath}";
-            System.Diagnostics.Debug.WriteLine($"XML exported to: {destinationPath}");
+            System.Diagnostics.Debug.WriteLine($"Export saved to: {destinationPath}");
         }
         catch (Exception ex)
         {
@@ -569,37 +668,48 @@
         }
     }
 
-    private async Task ShowXmlModal()
+    private async Task ShowExportModal()
     {
         try
         {
             var staffList = await localStorage.GetItemAsync<List<StaffInput>>("stafflist") ?? new List<StaffInput>();
             var savedRows = await localStorage.GetItemAsync<List<DashboardRotaRow>>("generatedRotaRows") ?? new List<DashboardRotaRow>();
-            exportedXmlContent = GenerateXmlContent(staffList, savedRows);
-            showXmlModal = true;
+            exportedCsvContent = GenerateCsvContent(staffList, savedRows);
+            showExportModal = true;
         }
         catch (Exception ex)
         {
-            dashboardStatusMessage = $"Failed to generate XML: {ex.Message}";
+            dashboardStatusMessage = $"Failed to generate export: {ex.Message}";
         }
     }
 
-    private Task CloseXmlModal()
+    private Task CloseExportModal()
     {
-        showXmlModal = false;
+        showExportModal = false;
         return Task.CompletedTask;
     }
 
-    private async Task CopyXmlToClipboard()
+    private async Task CopyExportToClipboard()
     {
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", exportedXmlContent);
-            dashboardStatusMessage = "XML copied to clipboard!";
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", exportedCsvContent);
+            dashboardStatusMessage = "Export copied to clipboard!";
         }
         catch (Exception ex)
         {
             dashboardStatusMessage = $"Failed to copy: {ex.Message}";
         }
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var escaped = value.Replace("\"", "\"\"");
+        return $"\"{escaped}\"";
     }
 }
