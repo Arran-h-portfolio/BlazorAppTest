@@ -26,6 +26,8 @@ you could then churn out a rota that can be viewed online or printed by the empl
       <li>Add ability to request PTO which you can view as a calender</li>
       <li>The calender would show approved time off so other employees know when they can effectively book off with out effecting the team</li>
       <li>Manager or owner would be able to approve PTO through the app</li>
+       <li>Add in payroll/cost of employees data, data analytics sectio</li>
+<li>Possible notification service for shifts available</li>
   </div>
 
   
