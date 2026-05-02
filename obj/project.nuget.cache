@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "esuzzvx0w8k=",
+  "dgSpecHash": "5LxUT/s+Tp4=",
   "success": true,
   "projectFilePath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj",
   "expectedPackageFiles": [
@@ -39,9 +39,11 @@
     "/Users/arran/.nuget/packages/microsoft.maui.essentials/9.0.120/microsoft.maui.essentials.9.0.120.nupkg.sha512",
     "/Users/arran/.nuget/packages/microsoft.maui.graphics/9.0.120/microsoft.maui.graphics.9.0.120.nupkg.sha512",
     "/Users/arran/.nuget/packages/microsoft.maui.resizetizer/9.0.120/microsoft.maui.resizetizer.9.0.120.nupkg.sha512",
-    "/Users/arran/.nuget/packages/microsoft.net.illink.tasks/9.0.14/microsoft.net.illink.tasks.9.0.14.nupkg.sha512",
-    "/Users/arran/.nuget/packages/microsoft.maccatalyst.ref.net9.0_26.2/26.2.9000/microsoft.maccatalyst.ref.net9.0_26.2.26.2.9000.nupkg.sha512",
-    "/Users/arran/.nuget/packages/microsoft.maccatalyst.runtime.maccatalyst-arm64.net9.0_26.2/26.2.9000/microsoft.maccatalyst.runtime.maccatalyst-arm64.net9.0_26.2.26.2.9000.nupkg.sha512"
+    "/Users/arran/.nuget/packages/microsoft.net.illink.tasks/9.0.15/microsoft.net.illink.tasks.9.0.15.nupkg.sha512",
+    "/Users/arran/.nuget/packages/microsoft.netcore.app.ref/9.0.15/microsoft.netcore.app.ref.9.0.15.nupkg.sha512",
+    "/Users/arran/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.15/microsoft.aspnetcore.app.ref.9.0.15.nupkg.sha512",
+    "/Users/arran/.nuget/packages/microsoft.maccatalyst.ref.net9.0_26.2/26.2.9008/microsoft.maccatalyst.ref.net9.0_26.2.26.2.9008.nupkg.sha512",
+    "/Users/arran/.nuget/packages/microsoft.maccatalyst.runtime.maccatalyst-arm64.net9.0_26.2/26.2.9008/microsoft.maccatalyst.runtime.maccatalyst-arm64.net9.0_26.2.26.2.9008.nupkg.sha512"
   ],
   "logs": []
 }
