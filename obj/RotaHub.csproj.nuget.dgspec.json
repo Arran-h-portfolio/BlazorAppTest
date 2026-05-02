@@ -65,7 +65,7 @@
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.14, )",
+              "version": "[9.0.15, )",
               "autoReferenced": true
             }
           },
@@ -83,12 +83,20 @@
           "warn": true,
           "downloadDependencies": [
             {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.15, 9.0.15]"
+            },
+            {
               "name": "Microsoft.MacCatalyst.Ref.net9.0_26.2",
-              "version": "[26.2.9000, 26.2.9000]"
+              "version": "[26.2.9008, 26.2.9008]"
             },
             {
               "name": "Microsoft.MacCatalyst.Runtime.maccatalyst-arm64.net9.0_26.2",
-              "version": "[26.2.9000, 26.2.9000]"
+              "version": "[26.2.9008, 26.2.9008]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.15, 9.0.15]"
             }
           ],
           "frameworkReferences": {
@@ -99,7 +107,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.202/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
