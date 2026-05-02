@@ -1,32 +1,38 @@
 {
   "format": 1,
   "restore": {
-    "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj": {}
+    "E:\\.Net Developer Career\\Github Repos\\BlazorAppTest\\RotaHub.csproj": {}
   },
   "projects": {
-    "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj": {
+    "E:\\.Net Developer Career\\Github Repos\\BlazorAppTest\\RotaHub.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj",
+        "projectUniqueName": "E:\\.Net Developer Career\\Github Repos\\BlazorAppTest\\RotaHub.csproj",
         "projectName": "RotaHub",
-        "projectPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/RotaHub.csproj",
-        "packagesPath": "/Users/arran/.nuget/packages/",
-        "outputPath": "/Users/arran/Desktop/Github-Repos/BlazorAppTest/obj/",
+        "projectPath": "E:\\.Net Developer Career\\Github Repos\\BlazorAppTest\\RotaHub.csproj",
+        "packagesPath": "C:\\Users\\arran\\.nuget\\packages\\",
+        "outputPath": "E:\\.Net Developer Career\\Github Repos\\BlazorAppTest\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/arran/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\arran\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net9.0-maccatalyst"
+          "net9.0-windows10.0.19041.0"
         ],
         "sources": {
-          "/usr/local/share/dotnet/library-packs": {},
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net9.0-maccatalyst26.2": {
-            "targetAlias": "net9.0-maccatalyst",
+          "net9.0-windows10.0.19041": {
+            "targetAlias": "net9.0-windows10.0.19041.0",
             "projectReferences": {}
           }
         },
@@ -40,11 +46,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
-        "net9.0-maccatalyst26.2": {
-          "targetAlias": "net9.0-maccatalyst",
+        "net9.0-windows10.0.19041": {
+          "targetAlias": "net9.0-windows10.0.19041.0",
           "dependencies": {
             "Blazored.LocalStorage": {
               "target": "Package",
@@ -61,16 +67,9 @@
             "Microsoft.Maui.Controls": {
               "target": "Package",
               "version": "[9.0.120, )"
-            },
-            "Microsoft.NET.ILLink.Tasks": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[9.0.15, )",
-              "autoReferenced": true
             }
           },
           "imports": [
-            "xamarinios10",
             "net461",
             "net462",
             "net47",
@@ -87,31 +86,55 @@
               "version": "[9.0.15, 9.0.15]"
             },
             {
-              "name": "Microsoft.MacCatalyst.Ref.net9.0_26.2",
-              "version": "[26.2.9008, 26.2.9008]"
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.11, 9.0.11]"
             },
             {
-              "name": "Microsoft.MacCatalyst.Runtime.maccatalyst-arm64.net9.0_26.2",
-              "version": "[26.2.9008, 26.2.9008]"
+              "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Crossgen2.win-x64",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[9.0.11, 9.0.11]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[9.0.15, 9.0.15]"
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Runtime.win-x64",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.Windows.SDK.NET.Ref",
+              "version": "[10.0.19041.57, 10.0.19041.57]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.11, 9.0.11]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+              "version": "[9.0.11, 9.0.11]"
             }
           ],
           "frameworkReferences": {
-            "Microsoft.MacCatalyst": {
+            "Microsoft.NETCore.App": {
               "privateAssets": "all"
             },
-            "Microsoft.NETCore.App": {
+            "Microsoft.Windows.SDK.NET.Ref.Windows": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101\\RuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
-        "maccatalyst-arm64": {
+        "win10-x64": {
           "#import": []
         }
       }
