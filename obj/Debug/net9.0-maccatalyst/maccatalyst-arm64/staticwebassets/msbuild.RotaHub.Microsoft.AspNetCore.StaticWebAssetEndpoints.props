@@ -612,17 +612,17 @@
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"nvj3ek99dh"},{"Name":"integrity","Value":"sha256-nQo5TciFG1iuVt7C1OLThHmqlS7O8C3K4qtznOzLjtY="},{"Name":"label","Value":"lib/bootstrap/dist/js/site.js"}]]]></EndpointProperties>
       <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"208"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022nQo5TciFG1iuVt7C1OLThHmqlS7O8C3K4qtznOzLjtY=\u0022"},{"Name":"Last-Modified","Value":"Thu, 09 Apr 2026 20:59:13 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
-    <StaticWebAssetEndpoint Include="RotaHub.jfrfw05wq7.styles.css">
+    <StaticWebAssetEndpoint Include="RotaHub.rnxud1v6vl.styles.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\RotaHub.styles.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
-      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"jfrfw05wq7"},{"Name":"integrity","Value":"sha256-YVdHPZQAeN\u002BlqEdMXwARNJugq6QaVBi6sEv/rkzCx7o="},{"Name":"label","Value":"RotaHub.styles.css"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"16244"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022YVdHPZQAeN\u002BlqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=\u0022"},{"Name":"Last-Modified","Value":"Thu, 16 Apr 2026 09:59:33 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"rnxud1v6vl"},{"Name":"integrity","Value":"sha256-50YZk1wcfCh9P/z\u002B9qiqIDjs48Hr5vLjbfjv/9H5Z6w="},{"Name":"label","Value":"RotaHub.styles.css"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"20083"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u002250YZk1wcfCh9P/z\u002B9qiqIDjs48Hr5vLjbfjv/9H5Z6w=\u0022"},{"Name":"Last-Modified","Value":"Fri, 01 May 2026 13:56:57 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="RotaHub.styles.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\RotaHub.styles.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
-      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-YVdHPZQAeN\u002BlqEdMXwARNJugq6QaVBi6sEv/rkzCx7o="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"16244"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022YVdHPZQAeN\u002BlqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=\u0022"},{"Name":"Last-Modified","Value":"Thu, 16 Apr 2026 09:59:33 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-50YZk1wcfCh9P/z\u002B9qiqIDjs48Hr5vLjbfjv/9H5Z6w="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"20083"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u002250YZk1wcfCh9P/z\u002B9qiqIDjs48Hr5vLjbfjv/9H5Z6w=\u0022"},{"Name":"Last-Modified","Value":"Fri, 01 May 2026 13:56:57 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
   </ItemGroup>
 </Project>

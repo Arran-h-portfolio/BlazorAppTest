@@ -3,207 +3,268 @@
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 <PageTitle>Weekly Preferences</PageTitle>
-<h1>Weekly Preferences</h1>
-<p>Here you can set daily staffing needs, by-time coverage targets, and the start/end-time options used when adding staff.</p>
+<div class="weekly-prefs-page">
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
+    <header class="prefs-hero card">
+        <div class="prefs-hero-body">
+            <div class="prefs-hero-text">
+                <h1>Weekly Preferences</h1>
+                <p>Adjust staffing targets, shift options, daily coverage, and role requirements for the week.</p>
+            </div>
+            <div class="prefs-kpis">
+                <div class="prefs-kpi">
+                    <span class="kpi-label">Total staff needed</span>
+                    <strong class="kpi-value">@TotalWeeklyStaffRequired</strong>
+                </div>
+                <div class="prefs-kpi">
+                    <span class="kpi-label">Start slots</span>
+                    <strong class="kpi-value">@weeklyStartTimes.StartTimes.Count</strong>
+                </div>
+                <div class="prefs-kpi">
+                    <span class="kpi-label">End slots</span>
+                    <strong class="kpi-value">@weeklyEndTimes.EndTimes.Count</strong>
+                </div>
+                <div class="prefs-kpi">
+                    <span class="kpi-label">Job roles</span>
+                    <strong class="kpi-value">@weeklyJobRoles.JobRoles.Count</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    @* ── Staff per day ──────────────────────────────────────── *@
+    <section class="prefs-card card">
+        <div class="card-body">
+            <div class="card-section-header">
                 <h2>Staff required per day</h2>
-                <div class="mb-3">
-                    <label class="form-label" for="monday">Monday</label>
-                    <input id="monday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Monday" />
+                <p class="section-desc">Set the baseline daily headcount used when generating the rota.</p>
+            </div>
+            <div class="day-strip">
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Mon</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Monday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="tuesday">Tuesday</label>
-                    <input id="tuesday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Tuesday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Tue</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Tuesday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="wednesday">Wednesday</label>
-                    <input id="wednesday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Wednesday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Wed</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Wednesday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="thursday">Thursday</label>
-                    <input id="thursday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Thursday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Thu</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Thursday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="friday">Friday</label>
-                    <input id="friday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Friday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Fri</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Friday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="saturday">Saturday</label>
-                    <input id="saturday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Saturday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Sat</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Saturday" />
                 </div>
-                <div class="mb-3">
-                    <label class="form-label" for="sunday">Sunday</label>
-                    <input id="sunday" class="form-control" type="number" min="0" @bind="weeklyRequirements.Sunday" />
+                <div class="day-strip-item">
+                    <span class="day-strip-label">Sun</span>
+                    <input class="form-control day-strip-input" type="number" min="0" @bind="weeklyRequirements.Sunday" />
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Available start times</h2>
-                <p class="text-muted">Add or remove start-time slots that will appear as options in the staff add form.</p>
-                @if (weeklyStartTimes.StartTimes.Any())
-                {
-                    @foreach (var (time, index) in weeklyStartTimes.StartTimes.Select((t, i) => (t, i)))
-                    {
-                        <div class="input-group mb-2">
-                            <input type="time" class="form-control" @bind="weeklyStartTimes.StartTimes[index]" />
-                            <button class="btn btn-outline-danger" type="button" @onclick="@(() => RemoveStartTime(index))">Remove</button>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p class="text-muted">No start times added yet.</p>
-                }
-                <button class="btn btn-secondary" @onclick="AddStartTime">Add start time</button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Daily opening times</h2>
-                <p class="text-muted">Set the opening time for each day of the week. (These are opening-up times, not necessarily times you open to the public)</p>
-                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
-                {
-                    <div class="mb-2">
-                        <label class="form-label" for="opentime_@day">@day</label>
-                        <input id="opentime_@day" type="time" class="form-control" @bind="dailyOpeningTimes.StartTimesByDay[day]" />
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Staff needed by a set time</h2>
-                <p class="text-muted">Set the minimum number of people who must be in by a certain time. The rota will bring starts forward if needed.</p>
-                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
-                {
-                    <div class="row g-2 align-items-end mb-2">
-                        <div class="col-sm-4">
-                            <label class="form-label fw-semibold">@day</label>
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">People in by</label>
-                            <input type="number" min="0" class="form-control" @bind="dailyCoverageTargets.CoverageByDay[day].RequiredStaff" />
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Time</label>
-                            <input type="time" class="form-control" @bind="dailyCoverageTargets.CoverageByDay[day].RequiredByTime" />
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Rota failsafes</h2>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="managerFirst" @bind="rotaGenerationOptions.AlwaysScheduleManagerFirst" />
-                    <label class="form-check-label" for="managerFirst">Always schedule a manager on first</label>
-                </div>
-                <p class="text-muted mb-0">When enabled, each staffed day will start with a manager wherever one is available.</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Available end times</h2>
-                <p class="text-muted">Add or remove end-time slots that will appear as options in the staff add form.</p>
-                @if (weeklyEndTimes.EndTimes.Any())
-                {
-                    @foreach (var (time, index) in weeklyEndTimes.EndTimes.Select((t, i) => (t, i)))
-                    {
-                        <div class="input-group mb-2">
-                            <input type="time" class="form-control" @bind="weeklyEndTimes.EndTimes[index]" />
-                            <button class="btn btn-outline-danger" type="button" @onclick="@(() => RemoveEndTime(index))">Remove</button>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p class="text-muted">No end times added yet.</p>
-                }
-                <button class="btn btn-secondary" @onclick="AddEndTime">Add end time</button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Available job roles</h2>
-                <p class="text-muted">Add or remove job roles that staff members can be assigned to.</p>
-                @if (weeklyJobRoles.JobRoles.Any())
-                {
-                    @foreach (var (role, index) in weeklyJobRoles.JobRoles.Select((r, i) => (r, i)))
-                    {
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" placeholder="Job Role" @bind="weeklyJobRoles.JobRoles[index]" />
-                            <button class="btn btn-outline-danger" type="button" @onclick="@(() => RemoveJobRole(index))">Remove</button>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p class="text-muted">No job roles added yet.</p>
-                }
-                <button class="btn btn-secondary" @onclick="AddJobRole">Add job role</button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h2>Daily job role requirements</h2>
-                <p class="text-muted">Select which job roles are required for each day of the week.</p>
-                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
-                {
-                    <div class="mb-3">
-                        <label class="form-label fw-bold d-block">@day</label>
-                        @if (weeklyJobRoles.JobRoles.Any())
-                        {
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="@($"allroles_{day}")" checked="@AreAllJobRolesSelected(day)" @onchange="@(e => ToggleAllDayJobRoles(e, day))" />
-                                <label class="form-check-label fw-semibold" for="@($"allroles_{day}")">All job roles required</label>
-                            </div>
+    </section>
 
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach (var role in weeklyJobRoles.JobRoles)
+    @* ── Rota failsafes ─────────────────────────────────────── *@
+    <section class="prefs-card card">
+        <div class="card-body">
+            <div class="card-section-header">
+                <h2>Rota FailSafes</h2>
+                <p class="section-desc">Guardrails to keep schedules practical when availability is tight.</p>
+            </div>
+            <label class="setting-row">
+                <div class="setting-row-text">
+                    <span class="setting-row-title">Always schedule a manager first</span>
+                    <span class="setting-row-desc">Each staffed day will start with a manager wherever one is available.</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="managerFirst" @bind="rotaGenerationOptions.AlwaysScheduleManagerFirst" />
+                    <span class="toggle-track"></span>
+                </div>
+            </label>
+        </div>
+    </section>
+
+    @* ── Shift time options ─────────────────────────────────── *@
+    <section class="prefs-card card">
+        <div class="card-body">
+            <div class="card-section-header">
+                <h2>Shift time options</h2>
+                <p class="section-desc">Reusable start and end times shown when creating or editing staff profiles.</p>
+            </div>
+            <div class="time-columns">
+                <div class="time-col">
+                    <h3 class="col-subheading">Start times</h3>
+                    @if (weeklyStartTimes.StartTimes.Any())
+                    {
+                        <div class="time-slot-list">
+                            @foreach (var (time, index) in weeklyStartTimes.StartTimes.Select((t, i) => (t, i)))
+                            {
+                                <div class="time-slot-row">
+                                    <input type="time" class="form-control" @bind="weeklyStartTimes.StartTimes[index]" />
+                                    <button class="btn-remove" type="button" title="Remove" @onclick="@(() => RemoveStartTime(index))">
+                                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-inline">No start times yet.</p>
+                    }
+                    <button class="btn-add-item" @onclick="AddStartTime">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        Add start time
+                    </button>
+                </div>
+
+                <div class="time-col">
+                    <h3 class="col-subheading">End times</h3>
+                    @if (weeklyEndTimes.EndTimes.Any())
+                    {
+                        <div class="time-slot-list">
+                            @foreach (var (time, index) in weeklyEndTimes.EndTimes.Select((t, i) => (t, i)))
+                            {
+                                <div class="time-slot-row">
+                                    <input type="time" class="form-control" @bind="weeklyEndTimes.EndTimes[index]" />
+                                    <button class="btn-remove" type="button" title="Remove" @onclick="@(() => RemoveEndTime(index))">
+                                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-inline">No end times yet.</p>
+                    }
+                    <button class="btn-add-item" @onclick="AddEndTime">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        Add end time
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* ── Opening and coverage targets ───────────────────────── *@
+    <section class="prefs-card card">
+        <div class="card-body">
+            <div class="card-section-header">
+                <h2>Opening and coverage targets</h2>
+                <p class="section-desc">Set opening times and minimum staffing-by-time targets for each day.</p>
+            </div>
+            <div class="coverage-table">
+                <div class="coverage-header">
+                    <span>Day</span>
+                    <span>Opening time</span>
+                    <span>Min. staff needed</span>
+                    <span>All in by</span>
+                </div>
+                @foreach (var day in WeekDays)
+                {
+                    <div class="coverage-row">
+                        <span class="day-badge">@day.Substring(0, 3)</span>
+                        <input type="time" class="form-control" @bind="dailyOpeningTimes.StartTimesByDay[day]" />
+                        <input type="number" min="0" class="form-control" @bind="dailyCoverageTargets.CoverageByDay[day].RequiredStaff" />
+                        <input type="time" class="form-control" @bind="dailyCoverageTargets.CoverageByDay[day].RequiredByTime" />
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ── Job roles and daily requirements ───────────────────── *@
+    <section class="prefs-card card">
+        <div class="card-body">
+            <div class="card-section-header">
+                <h2>Job roles and daily requirements</h2>
+                <p class="section-desc">Manage role options and assign which roles are required for each day.</p>
+            </div>
+            <div class="roles-layout">
+                <div class="roles-bank">
+                    <h3 class="col-subheading">Available job roles</h3>
+                    @if (weeklyJobRoles.JobRoles.Any())
+                    {
+                        <div class="role-input-list">
+                            @foreach (var (role, index) in weeklyJobRoles.JobRoles.Select((r, i) => (r, i)))
+                            {
+                                <div class="time-slot-row">
+                                    <input type="text" class="form-control" placeholder="Role name" @bind="weeklyJobRoles.JobRoles[index]" />
+                                    <button class="btn-remove" type="button" title="Remove" @onclick="@(() => RemoveJobRole(index))">
+                                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-inline">No roles yet. Add one to configure daily assignments.</p>
+                    }
+                    <button class="btn-add-item" @onclick="AddJobRole">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        Add job role
+                    </button>
+                </div>
+
+                <div class="roles-by-day">
+                    <h3 class="col-subheading">Daily role requirements</h3>
+                    @foreach (var day in WeekDays)
+                    {
+                        <div class="day-role-panel">
+                            <div class="day-role-header">
+                                <span class="day-badge">@day.Substring(0, 3)</span>
+                                <span class="day-full-name">@day</span>
+                                @if (weeklyJobRoles.JobRoles.Any())
                                 {
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="@($"dayrole_{day}_{role}")" checked="@dailyJobRoles.JobRolesByDay[day].Contains(role)" @onchange="@(e => ToggleDayJobRole(e, day, role))" />
-                                        <label class="form-check-label" for="@($"dayrole_{day}_{role}")">@role</label>
-                                    </div>
+                                    <label class="select-all-label">
+                                        <input class="form-check-input" type="checkbox" checked="@AreAllJobRolesSelected(day)" @onchange="@(e => ToggleAllDayJobRoles(e, day))" />
+                                        All roles
+                                    </label>
                                 }
                             </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted small">No job roles configured yet.</p>
-                        }
-                    </div>
-                }
+                            @if (weeklyJobRoles.JobRoles.Any())
+                            {
+                                <div class="role-chips">
+                                    @foreach (var role in weeklyJobRoles.JobRoles)
+                                    {
+                                        <label class="role-chip @(dailyJobRoles.JobRolesByDay[day].Contains(role) ? "role-chip--active" : "")" for="@($"dayrole_{day}_{role}")">
+                                            <input type="checkbox" id="@($"dayrole_{day}_{role}")" checked="@dailyJobRoles.JobRolesByDay[day].Contains(role)" @onchange="@(e => ToggleDayJobRole(e, day, role))" />
+                                            @role
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="empty-inline">No roles configured yet.</p>
+                            }
+                        </div>
+                    }
+                </div>
             </div>
         </div>
-    </div>
-</div>
+    </section>
 
-<button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save preferences</button>
-@if (!string.IsNullOrWhiteSpace(saveMessage))
-{
-    <div class="alert @saveMessageCssClass mt-3" role="alert">@saveMessage</div>
-}
+    @* ── Save action ────────────────────────────────────────── *@
+    <div class="prefs-actions">
+        <button class="btn btn-primary" @onclick="SaveWeeklyPrefs">Save weekly preferences</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(saveMessage))
+    {
+        <div class="alert @saveMessageCssClass save-alert" role="alert">@saveMessage</div>
+    }
+</div>
 
 @code {
     private DayRequirements weeklyRequirements = new DayRequirements
@@ -226,6 +287,13 @@
     private string saveMessage = string.Empty;
     private string saveMessageCssClass = "alert-success";
     private readonly string[] WeekDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private int TotalWeeklyStaffRequired => weeklyRequirements.Monday
+        + weeklyRequirements.Tuesday
+        + weeklyRequirements.Wednesday
+        + weeklyRequirements.Thursday
+        + weeklyRequirements.Friday
+        + weeklyRequirements.Saturday
+        + weeklyRequirements.Sunday;
 
     @* Below states trying local storage for all saved constraints first *@
 

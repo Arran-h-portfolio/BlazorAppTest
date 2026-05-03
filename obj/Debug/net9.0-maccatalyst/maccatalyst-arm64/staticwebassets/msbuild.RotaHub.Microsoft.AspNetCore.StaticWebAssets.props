@@ -1032,12 +1032,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName>ScopedCss</AssetTraitName>
       <AssetTraitValue>ApplicationBundle</AssetTraitValue>
-      <Fingerprint>jfrfw05wq7</Fingerprint>
-      <Integrity>YVdHPZQAeN+lqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=</Integrity>
+      <Fingerprint>rnxud1v6vl</Fingerprint>
+      <Integrity>50YZk1wcfCh9P/z+9qiqIDjs48Hr5vLjbfjv/9H5Z6w=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>16244</FileLength>
-      <LastWriteTime>Thu, 16 Apr 2026 09:59:33 GMT</LastWriteTime>
+      <FileLength>20083</FileLength>
+      <LastWriteTime>Fri, 01 May 2026 13:56:57 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\RotaHub.styles.css'))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>

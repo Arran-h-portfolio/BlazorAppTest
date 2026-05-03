@@ -72,196 +72,211 @@
 
 <PageTitle>Rota Generator</PageTitle>
 
-<h1>Rota Generator</h1>
-
-<p>Generate a weekly rota using the saved staff list, day requirements, opening times, and job-role rules.</p>
-
-<div class="d-flex flex-wrap gap-2 mb-3 no-print">
-    <button class="btn btn-primary" @onclick="GenerateRota" disabled="@isLoading">Generate rota</button>
-    <button class="btn btn-outline-secondary" @onclick="LoadSavedData" disabled="@isLoading">Refresh saved data</button>
-    <button class="btn btn-success" @onclick="SaveGeneratedRota" disabled="@(!generatedRows.Any() || isLoading)">Save rota</button>
-    <button class="btn btn-outline-primary" @onclick="ToggleEditMode" disabled="@(!generatedRows.Any())">@(isEditMode ? "Done editing" : "Edit rota")</button>
-    <button class="btn btn-outline-dark" @onclick="AddManualRow" disabled="@isLoading">Add manual row</button>
-    <button class="btn btn-outline-danger" @onclick="ExportToPdf" disabled="@(!generatedRows.Any())">Export to PDF</button>
-</div>
-
-<div class="row g-3 mb-3 no-print">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5">Active staff</h2>
-                <p class="display-6 mb-0">@staffList.Count(s => s.IsActive)</p>
+<section class="rota-page">
+    <header class="rota-header card">
+        <div class="rota-header-body">
+            <div class="rota-header-copy">
+                <h1>Rota Generator</h1>
+                <p>Generate a weekly rota using the saved staff list, day requirements, opening times, and job-role rules.</p>
+                <span class="rota-subnote">Build, review, edit, and export from one workflow without changing any of your saved logic.</span>
+            </div>
+            <div class="rota-toolbar no-print">
+                <button class="btn btn-primary" @onclick="GenerateRota" disabled="@isLoading">Generate rota</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadSavedData" disabled="@isLoading">Refresh saved data</button>
+                <button class="btn btn-secondary" @onclick="SaveGeneratedRota" disabled="@(!generatedRows.Any() || isLoading)">Save rota</button>
+                <button class="btn btn-outline-primary" @onclick="ToggleEditMode" disabled="@(!generatedRows.Any())">@(isEditMode ? "Done editing" : "Edit rota")</button>
+                <button class="btn btn-outline-dark" @onclick="AddManualRow" disabled="@isLoading">Add manual row</button>
+                <button class="btn btn-outline-danger" @onclick="ExportToPdf" disabled="@(!generatedRows.Any())">Export to PDF</button>
             </div>
         </div>
+    </header>
+
+    <div class="rota-stats no-print">
+        <article class="rota-stat-card">
+            <span class="rota-stat-kicker">Team</span>
+            <h2>Active staff</h2>
+            <p class="rota-stat-value">@staffList.Count(s => s.IsActive)</p>
+        </article>
+        <article class="rota-stat-card">
+            <span class="rota-stat-kicker">Demand</span>
+            <h2>Required weekly slots</h2>
+            <p class="rota-stat-value">@GetTotalRequiredSlots()</p>
+        </article>
+        <article class="rota-stat-card">
+            <span class="rota-stat-kicker">Output</span>
+            <h2>Generated assignments</h2>
+            <p class="rota-stat-value">@generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")</p>
+        </article>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5">Required weekly slots</h2>
-                <p class="display-6 mb-0">@GetTotalRequiredSlots()</p>
-            </div>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert alert-info rota-status" role="alert">@statusMessage</div>
+    }
+
+    @if (coverageWarnings.Any())
+    {
+        <div class="alert alert-warning no-print rota-warning" role="alert">
+            <strong>Coverage notes:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var warning in coverageWarnings)
+                {
+                    <li>@warning</li>
+                }
+            </ul>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5">Generated assignments</h2>
-                <p class="display-6 mb-0">@generatedRows.Count(r => r.StaffName != "Unfilled" && r.StaffName != "No staff required")</p>
-            </div>
-        </div>
-    </div>
-</div>
+    }
 
-@if (!string.IsNullOrWhiteSpace(statusMessage))
-{
-    <div class="alert alert-info" role="alert">@statusMessage</div>
-}
+    @if (generatedRows.Any())
+    {
+        <section class="rota-shell card">
+            <div class="card-body rota-shell-body">
+                <div class="rota-section-header">
+                    <div>
+                        <h2>Generated Weekly Rota</h2>
+                        <p class="mb-0">Review the generated schedule, then refine assignments or export when ready.</p>
+                    </div>
+                    <span class="rota-chip">@generatedRows.Count rows</span>
+                </div>
 
-@if (coverageWarnings.Any())
-{
-    <div class="alert alert-warning no-print" role="alert">
-        <strong>Coverage notes:</strong>
-        <ul class="mb-0 mt-2">
-            @foreach (var warning in coverageWarnings)
-            {
-                <li>@warning</li>
-            }
-        </ul>
-    </div>
-}
-
-@if (generatedRows.Any())
-{
-    <div class="card">
-        <div class="card-body">
-            <h2>Generated Weekly Rota</h2>
-            <div id="rotaPrintArea" class="table-responsive">
-                <table class="table table-striped table-bordered align-middle">
-                    <thead>
-                        <tr>
-                            <th>Staff name</th>
-                            @foreach (var day in WeekDays)
-                            {
-                                <th>@day</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var staffName in GetDisplayedStaffNames())
-                        {
-                            <tr>
-                                <td class="fw-semibold @(staffName == "Unfilled" ? "text-danger" : string.Empty)">@staffName</td>
-                                @foreach (var day in WeekDays)
-                                {
-                                    var cellRows = GetRowsForStaffAndDay(staffName, day).ToList();
-                                    <td class="@(staffName == "Unfilled" && cellRows.Any() ? "table-warning" : string.Empty)">
-                                        @if (cellRows.Any())
-                                        {
-                                            @foreach (var assignment in cellRows)
-                                            {
-                                                <div class="mb-1">@FormatTimeRange(assignment)</div>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">—</span>
-                                        }
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            @if (isEditMode)
-            {
-                <div class="mt-4 no-print">
-                    <h3 class="h5">Edit assignments</h3>
-                    <table class="table table-striped table-bordered align-middle">
+                <div id="rotaPrintArea" class="table-responsive rota-table-wrap">
+                    <table class="table table-striped table-bordered align-middle rota-table">
                         <thead>
                             <tr>
-                                <th>Day</th>
-                                <th>Name</th>
-                                <th>Start</th>
-                                <th>End</th>
-                                <th>Actions</th>
+                                <th>Staff name</th>
+                                @foreach (var day in WeekDays)
+                                {
+                                    <th>@day</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var row in generatedRows)
+                            @foreach (var staffName in GetDisplayedStaffNames())
                             {
                                 <tr>
-                                    <td>
-                                        @if (row.StaffName != "No staff required")
-                                        {
-                                            <select class="form-select" @bind="row.Day">
-                                                @foreach (var day in WeekDays)
+                                    <td class="fw-semibold @(staffName == "Unfilled" ? "text-danger" : string.Empty)">@staffName</td>
+                                    @foreach (var day in WeekDays)
+                                    {
+                                        var cellRows = GetRowsForStaffAndDay(staffName, day).ToList();
+                                        <td class="@(staffName == "Unfilled" && cellRows.Any() ? "table-warning" : string.Empty)">
+                                            @if (cellRows.Any())
+                                            {
+                                                @foreach (var assignment in cellRows)
                                                 {
-                                                    <option value="@day">@day</option>
+                                                    <div class="mb-1">@FormatTimeRange(assignment)</div>
                                                 }
-                                            </select>
-                                        }
-                                        else
-                                        {
-                                            @row.Day
-                                        }
-                                    </td>
-                                    <td class="@(row.StaffName == "Unfilled" ? "text-danger fw-semibold" : string.Empty)">
-                                        @if (row.StaffName != "No staff required")
-                                        {
-                                            <select class="form-select" value="@row.EmployeeID" @onchange="@(e => UpdateAssignedStaff(e, row))">
-                                                <option value="">Unfilled</option>
-                                                @foreach (var staff in GetSelectableStaffForDay(row.Day))
-                                                {
-                                                    <option value="@staff.EmployeeID">@GetStaffOptionLabel(staff, row.Day)</option>
-                                                }
-                                            </select>
-                                        }
-                                        else
-                                        {
-                                            @row.StaffName
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (row.StaffName != "No staff required")
-                                        {
-                                            <input type="time" class="form-control" value="@row.StartTime" @onchange="@(e => row.StartTime = e.Value?.ToString() ?? string.Empty)" />
-                                        }
-                                        else
-                                        {
-                                            @row.StartTime
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (row.StaffName != "No staff required")
-                                        {
-                                            <input type="time" class="form-control" value="@row.EndTime" @onchange="@(e => row.EndTime = e.Value?.ToString() ?? string.Empty)" />
-                                        }
-                                        else
-                                        {
-                                            @row.EndTime
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (row.StaffName != "No staff required")
-                                        {
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveRow(row))">Remove</button>
-                                        }
-                                    </td>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-            }
+
+                @if (isEditMode)
+                {
+                    <div class="mt-4 no-print rota-edit-block">
+                        <div class="rota-section-header rota-section-header--sub">
+                            <div>
+                                <h3 class="h5 mb-1">Edit assignments</h3>
+                                <p class="mb-0">Refine individual rows without regenerating the full rota.</p>
+                            </div>
+                        </div>
+                        <div class="table-responsive rota-table-wrap">
+                            <table class="table table-striped table-bordered align-middle rota-edit-table">
+                                <thead>
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Name</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in generatedRows)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (row.StaffName != "No staff required")
+                                                {
+                                                    <select class="form-select" @bind="row.Day">
+                                                        @foreach (var day in WeekDays)
+                                                        {
+                                                            <option value="@day">@day</option>
+                                                        }
+                                                    </select>
+                                                }
+                                                else
+                                                {
+                                                    @row.Day
+                                                }
+                                            </td>
+                                            <td class="@(row.StaffName == "Unfilled" ? "text-danger fw-semibold" : string.Empty)">
+                                                @if (row.StaffName != "No staff required")
+                                                {
+                                                    <select class="form-select" value="@row.EmployeeID" @onchange="@(e => UpdateAssignedStaff(e, row))">
+                                                        <option value="">Unfilled</option>
+                                                        @foreach (var staff in GetSelectableStaffForDay(row.Day))
+                                                        {
+                                                            <option value="@staff.EmployeeID">@GetStaffOptionLabel(staff, row.Day)</option>
+                                                        }
+                                                    </select>
+                                                }
+                                                else
+                                                {
+                                                    @row.StaffName
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (row.StaffName != "No staff required")
+                                                {
+                                                    <input type="time" class="form-control" value="@row.StartTime" @onchange="@(e => row.StartTime = e.Value?.ToString() ?? string.Empty)" />
+                                                }
+                                                else
+                                                {
+                                                    @row.StartTime
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (row.StaffName != "No staff required")
+                                                {
+                                                    <input type="time" class="form-control" value="@row.EndTime" @onchange="@(e => row.EndTime = e.Value?.ToString() ?? string.Empty)" />
+                                                }
+                                                else
+                                                {
+                                                    @row.EndTime
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (row.StaffName != "No staff required")
+                                                {
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveRow(row))">Remove</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else if (!isLoading)
+    {
+        <div class="rota-empty-state">
+            <h2>No rota generated yet</h2>
+            <p>Click <strong>Generate rota</strong> to build the weekly table using your saved staffing rules.</p>
         </div>
-    </div>
-}
-else if (!isLoading)
-{
-    <p class="text-muted">No rota generated yet. Click <strong>Generate rota</strong> to build the weekly table.</p>
-}
+    }
+</section>
 
 @code {
     private List<StaffInput> staffList = new();
@@ -799,6 +814,11 @@ else if (!isLoading)
 
     private bool IsStaffAvailableForDay(StaffInput staff, string day)
     {
+        if (!staff.IsAvailableThisWeek)
+        {
+            return false;
+        }
+
         if (staff.DailyAvailability.TryGetValue(day, out var available) && available)
         {
             return true;

@@ -704,3 +704,203 @@ main[b-ct5juy3tq4] {
   color: #475569;
   font-size: 17px;
 }
+/* /Components/Pages/WeeklyPrefs.razor.rz.scp.css */
+.weekly-prefs-page[b-kyscj58zse] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.prefs-hero[b-kyscj58zse] {
+  border: 1px solid #f2c1c1;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #fff 45%, #ffe9e9 100%);
+  box-shadow: 0 10px 28px rgba(216, 9, 47, 0.08);
+}
+
+.prefs-hero .card-body[b-kyscj58zse] {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.prefs-hero-title-wrap h1[b-kyscj58zse] {
+  margin: 0 0 6px;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #eb2525, #eb8282);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.prefs-kpis[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  gap: 10px;
+  min-width: min(100%, 320px);
+}
+
+.prefs-kpi[b-kyscj58zse] {
+  border: 1px solid #e7eaef;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prefs-kpi span[b-kyscj58zse] {
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prefs-kpi strong[b-kyscj58zse] {
+  font-size: 1.3rem;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.prefs-grid[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.prefs-card[b-kyscj58zse] {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.prefs-card h2[b-kyscj58zse] {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.prefs-card h3[b-kyscj58zse] {
+  font-size: 0.98rem;
+  margin: 0 0 10px;
+  color: #334155;
+}
+
+.prefs-card-wide[b-kyscj58zse] {
+  grid-column: 1 / -1;
+}
+
+.day-grid[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.setting-switch[b-kyscj58zse] {
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #f6cdcd;
+  border-radius: 12px;
+  background: #fff6f6;
+}
+
+.time-columns[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.coverage-grid[b-kyscj58zse] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coverage-row[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: end;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.day-label[b-kyscj58zse] {
+  font-weight: 700;
+  color: #334155;
+}
+
+.roles-layout[b-kyscj58zse] {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(320px, 1.3fr);
+  gap: 20px;
+}
+
+.day-role-panel[b-kyscj58zse] {
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.role-chips[b-kyscj58zse] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-chip[b-kyscj58zse] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.role-chip:hover[b-kyscj58zse] {
+  border-color: #f3a8a8;
+  background: #fff7f7;
+}
+
+.prefs-actions[b-kyscj58zse] {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 991px) {
+  .prefs-grid[b-kyscj58zse] {
+    grid-template-columns: 1fr;
+  }
+
+  .time-columns[b-kyscj58zse],
+  .roles-layout[b-kyscj58zse],
+  .day-grid[b-kyscj58zse] {
+    grid-template-columns: 1fr;
+  }
+
+  .coverage-row[b-kyscj58zse] {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .prefs-actions[b-kyscj58zse] {
+    justify-content: stretch;
+  }
+
+  .prefs-actions .btn[b-kyscj58zse] {
+    width: 100%;
+  }
+}

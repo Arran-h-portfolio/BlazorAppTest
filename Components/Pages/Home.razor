@@ -1,49 +1,116 @@
 ﻿@page "/"
 <PageTitle>Home</PageTitle>
 
+<div class="home-page">
+    <section class="hero modern-hero-bg">
+        <div class="hero-content">
+            <div class="hero-copy">
+                <div class="hero-brand-row">
+                    <img class="home-logo" src="/images/rotahub-logo.svg" alt="RotaHub logo" />
+                    <div class="hero-brand-copy">
+                        <span class="hero-eyebrow">Smart rota operations</span>
+                        <h1>RotaHub</h1>
+                    </div>
+                </div>
 
-<section class="hero modern-hero-bg">
-    <div class="hero-content">
-        <img class="home-logo" src="/images/rotahub-logo.svg" alt="RotaHub logo" />
-        <h1>RotaHub</h1>
-        <h2>
-            Smarter <span class="highlight">staff scheduling</span>, without the stress
-        </h2>
-        <div class="hero-subtext">
-            <p>Automate your staff scheduling with a smarter, faster rota system.</p>
-            <ul class="items-list">
-                <li>Manage your team</li>
-                <li>Set availability</li>
-                <li>Generate optimised rotas in seconds</li>
-            </ul>
+                <h2>
+                    Smarter <span class="highlight">staff scheduling</span>, built for calm, fast weekly planning
+                </h2>
+
+                <p class="hero-lead">
+                    Run staffing, availability, role requirements, and rota generation from one focused workspace with less admin overhead and better weekly control.
+                </p>
+
+                <div class="hero-points" aria-label="Key benefits">
+                    <div class="hero-point">
+                        <span class="hero-point-icon">01</span>
+                        <div>
+                            <strong>Manage your team</strong>
+                            <p>Keep staff details, roles, and working patterns current in one place.</p>
+                        </div>
+                    </div>
+                    <div class="hero-point">
+                        <span class="hero-point-icon">02</span>
+                        <div>
+                            <strong>Set real availability</strong>
+                            <p>Work with weekly preferences and day-level coverage rules that reflect reality.</p>
+                        </div>
+                    </div>
+                    <div class="hero-point">
+                        <span class="hero-point-icon">03</span>
+                        <div>
+                            <strong>Generate better rotas</strong>
+                            <p>Create optimised schedules in seconds, then fine-tune when needed.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-buttons">
+                    <a class="btn btn-primary elevated" href="/dashboard">Open dashboard</a>
+                    <a class="btn btn-secondary elevated" href="/rotaGenerator">Generate rota</a>
+                </div>
+            </div>
+
+            <aside class="hero-panel" aria-label="RotaHub summary">
+                <div class="hero-panel-card hero-panel-card--primary">
+                    <span class="panel-label panel-label--on-dark">This week</span>
+                    <strong>One place for staffing, preferences, and rota generation</strong>
+                    <p>Move from setup to published rota with fewer handoffs and less duplicated admin.</p>
+                </div>
+
+                <div class="hero-panel-stats">
+                    <div class="hero-stat-card">
+                        <span class="stat-value">7</span>
+                        <span class="stat-label">Daily staffing targets</span>
+                    </div>
+                    <div class="hero-stat-card">
+                        <span class="stat-value">24/7</span>
+                        <span class="stat-label">Access to saved weekly settings</span>
+                    </div>
+                    <div class="hero-stat-card">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Workflow from setup to rota</span>
+                    </div>
+                </div>
+
+                <div class="hero-panel-card hero-panel-card--secondary">
+                    <span class="panel-label">Quick start</span>
+                    <ul class="panel-list">
+                        <li>Set weekly staffing targets</li>
+                        <li>Add staff and availability</li>
+                        <li>Generate and refine the rota</li>
+                    </ul>
+                </div>
+            </aside>
         </div>
-        <div class="hero-buttons">
-            <a class="btn-primary elevated" href="/dashboard">Go to Dashboard</a>
-            <button class="btn-secondary elevated">View Demo</button>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <span class="feature-kicker">Operations</span>
+            <h3>Staff Management</h3>
+            <p>Add, organise, and maintain staff profiles with roles, working patterns, and availability in one clean system.</p>
         </div>
-    </div>
-</section>
+        <div class="feature-card">
+            <span class="feature-kicker">Coverage</span>
+            <h3>Availability Tracking</h3>
+            <p>Use weekly preferences and per-day constraints to reduce scheduling conflicts before they happen.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-kicker">Automation</span>
+            <h3>Auto Rota Generator</h3>
+            <p>Generate practical schedules quickly using saved staffing requirements, roles, and shift windows.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-kicker">Control</span>
+            <h3>Manual Editing</h3>
+            <p>Adjust assignments after generation so the final rota still reflects day-to-day operational judgment.</p>
+        </div>
+    </section>
 
-
-<section class="features">
-    <div class="feature-card">
-        <h3>👥 Staff Management</h3>
-        <p>Add and organise your team with ease.</p>
-    </div>
-    <div class="feature-card">
-        <h3>🕒 Availability Tracking</h3>
-        <p>Prevent conflicts before they happen.</p>
-    </div>
-    <div class="feature-card">
-        <h3>⚡ Auto Rota Generator</h3>
-        <p>Create optimised schedules instantly.</p>
-    </div>
-    <div class="feature-card">
-        <h3>✏️ Manual Editing</h3>
-        <p>Full control when you need it.</p>
-    </div>
-</section>
-
-<div class="trust-section">
-    <p class="trust-text">Trusted by teams to simplify scheduling</p>
+    <section class="trust-section" aria-label="Platform value">
+        <div class="trust-card">
+            <p class="trust-text">A calmer workflow for weekly rota planning, from setup to final schedule.</p>
+        </div>
+    </section>
 </div>
