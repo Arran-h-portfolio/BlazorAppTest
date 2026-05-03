@@ -48,6 +48,10 @@
 		<data>
 		9FgEHWTwqsdg7q81bDRABgEMiuY=
 		</data>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css</key>
+		<data>
+		hsN8rHaN4ISSwOPeNO72VYlBYJk=
+		</data>
 		<key>Resources/wwwroot/RotaHub.lxsmjpz7le.bundle.scp.css</key>
 		<data>
 		UoKN0Xj0kQ1HKOsuxeeAAnEihrM=
@@ -654,14 +658,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			MYVFWNWUcHsozQBJQAlxYChr0d6x7/a1xUxI8nUi9dw=
+			cSTN1mqJhK2AiAVkif/0raXmST6gBJXV7vjuHv064Eo=
 			</data>
 		</dict>
 		<key>MonoBundle/RotaHub.pdb</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			tR2gik08Rc3uYYQXaWaOcsPmdBnBdzVoDLFoxpYcOis=
+			d1yYCAdsmYrM+kvbTImhCSv8KXgnQzcFsFSIMANnjyg=
 			</data>
 		</dict>
 		<key>MonoBundle/SixLabors.Fonts.dll</key>
@@ -2174,6 +2178,13 @@
 			<key>hash2</key>
 			<data>
 			lGmtzTqKkySFyDhjfkTLrjlU5i3rKWOQ3BimhEJMZag=
+			</data>
+		</dict>
+		<key>Resources/wwwroot/RotaHub.jfrfw05wq7.bundle.scp.css</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			YVdHPZQAeN+lqEdMXwARNJugq6QaVBi6sEv/rkzCx7o=
 			</data>
 		</dict>
 		<key>Resources/wwwroot/RotaHub.lxsmjpz7le.bundle.scp.css</key>
