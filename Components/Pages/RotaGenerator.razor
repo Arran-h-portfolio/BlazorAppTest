@@ -2,7 +2,6 @@
 @using DayRequirements.Models
 @using StaffInput.Models
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
-@inject IJSRuntime JS
 
 <style>
     @@media print {
@@ -542,10 +541,10 @@
     {
         try
         {
-            statusMessage = "Generating PDF...";
+            statusMessage = "Preparing PDF...";
             StateHasChanged();
 
-            var fileName = "rota_export.pdf";
+            var fileName = $"rota_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
             await GeneratePdfReport(fileName);
         }
         catch (Exception ex)
@@ -559,34 +558,19 @@
     {
         try
         {
-            var htmlContent = GenerateRotaHtml();
-            var htmlFileName = fileName.Replace(".pdf", ".html");
-            
-            // Save to file system
-            string? destinationPath = null;
+            var pdfBytes = GenerateRotaPdf();
+            var saveResult = await SavePdfWithPickerAsync(fileName, pdfBytes);
 
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
+            if (string.IsNullOrWhiteSpace(saveResult.Path))
             {
-                destinationPath = Path.Combine(documentsPath, htmlFileName);
-            }
-            else
-            {
-                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                if (!string.IsNullOrEmpty(desktopPath) && Directory.Exists(desktopPath))
-                {
-                    destinationPath = Path.Combine(desktopPath, htmlFileName);
-                }
+                statusMessage = "PDF export cancelled. No file was saved.";
+                return;
             }
 
-            if (string.IsNullOrEmpty(destinationPath))
-            {
-                destinationPath = Path.Combine(AppContext.BaseDirectory, htmlFileName);
-            }
-
-            await File.WriteAllTextAsync(destinationPath, htmlContent);
-            statusMessage = $"✓ Rota exported successfully to: {destinationPath} - Open in your browser and use 'Print > Save as PDF' to create a PDF file.";
-            System.Diagnostics.Debug.WriteLine($"HTML rota exported to: {destinationPath}");
+            statusMessage = saveResult.UsedFallback
+                ? $"Save picker unavailable. PDF saved automatically to: {saveResult.Path}"
+                : $"PDF saved to: {saveResult.Path}";
+            System.Diagnostics.Debug.WriteLine($"PDF rota exported to: {saveResult.Path}");
         }
         catch (Exception ex)
         {
@@ -595,86 +579,345 @@
         }
     }
 
-    private string GenerateRotaHtml()
+    private static async Task<(string? Path, bool UsedFallback)> SavePdfWithPickerAsync(string fileName, byte[] pdfBytes)
     {
-        var sb = new System.Text.StringBuilder();
-        var staffNames = GetDisplayedStaffNames().ToList();
+        var tempPath = Path.Combine(FileSystem.CacheDirectory, fileName);
+        await File.WriteAllBytesAsync(tempPath, pdfBytes);
 
-        sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html lang=\"en\">");
-        sb.AppendLine("<head>");
-        sb.AppendLine("    <meta charset=\"UTF-8\">");
-        sb.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
-        sb.AppendLine("    <title>Weekly Rota</title>");
-        sb.AppendLine("    <style>");
-        sb.AppendLine("        body { font-family: Arial, sans-serif; margin: 20px; }");
-        sb.AppendLine("        h1 { text-align: center; }");
-        sb.AppendLine("        .header-info { text-align: right; font-size: 12px; color: #666; margin-bottom: 20px; }");
-        sb.AppendLine("        table { width: 100%; border-collapse: collapse; margin-top: 20px; }");
-        sb.AppendLine("        th, td { border: 1px solid #333; padding: 10px; text-align: left; }");
-        sb.AppendLine("        th { background-color: #f0f0f0; font-weight: bold; }");
-        sb.AppendLine("        tr:nth-child(even) { background-color: #f9f9f9; }");
-        sb.AppendLine("        .unfilled { color: #d00; font-weight: bold; }");
-        sb.AppendLine("        .day-header { background-color: #e0e0e0; }");
-        sb.AppendLine("        @media print { body { margin: 10px; } table { font-size: 11px; } th, td { padding: 6px; } }");
-        sb.AppendLine("    </style>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body>");
-        sb.AppendLine("    <h1>Weekly Rota</h1>");
-        sb.AppendLine($"    <div class=\"header-info\">Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</div>");
-        sb.AppendLine("    <table>");
-        sb.AppendLine("        <thead>");
-        sb.AppendLine("            <tr>");
-        sb.AppendLine("                <th>Staff Name</th>");
-        
-        foreach (var day in WeekDays)
+#if MACCATALYST || IOS
+        var tcs = new TaskCompletionSource<string?>();
+
+        await MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            sb.AppendLine($"                <th class=\"day-header\">{day}</th>");
+            try
+            {
+                var sourceUrl = Foundation.NSUrl.FromFilename(tempPath);
+                var picker = new UIKit.UIDocumentPickerViewController(new[] { sourceUrl }, true);
+                picker.ShouldShowFileExtensions = true;
+                picker.ModalPresentationStyle = UIKit.UIModalPresentationStyle.FormSheet;
+
+                picker.DidPickDocumentAtUrls += (_, args) =>
+                {
+                    var pickedUrl = args.Urls?.FirstOrDefault();
+                    tcs.TrySetResult(pickedUrl?.Path);
+                };
+
+                picker.WasCancelled += (_, _) => tcs.TrySetResult(null);
+
+                var root = Microsoft.Maui.ApplicationModel.Platform.GetCurrentUIViewController();
+
+                while (root?.PresentedViewController is not null)
+                {
+                    root = root.PresentedViewController;
+                }
+
+                if (root is null)
+                {
+                    var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                    await File.WriteAllBytesAsync(fallbackPath, pdfBytes);
+                    tcs.TrySetResult(fallbackPath);
+                    return;
+                }
+
+                root.PresentViewController(picker, true, null);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Save picker error: {ex}");
+                var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                await File.WriteAllBytesAsync(fallbackPath, pdfBytes);
+                tcs.TrySetResult(fallbackPath);
+            }
+        });
+
+        var chosenPath = await tcs.Task;
+        var didUseFallback = !string.IsNullOrWhiteSpace(chosenPath)
+            && string.Equals(Path.GetDirectoryName(chosenPath), Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), StringComparison.OrdinalIgnoreCase);
+
+        return (chosenPath, didUseFallback);
+#else
+        var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+        await File.WriteAllBytesAsync(fallbackPath, pdfBytes);
+        return (fallbackPath, true);
+#endif
+    }
+
+    private byte[] GenerateRotaPdf()
+    {
+        const double pageWidth = 1008;
+        const double pageHeight = 612;
+        const double margin = 18;
+        var titleY = pageHeight - margin - 8;
+        var tableTopY = titleY - 20;
+        const double headerHeight = 24;
+        const double rowPadding = 4;
+        const double textLineHeight = 11;
+        var footerY = margin - 4;
+
+        var firstColumnWidth = 155d;
+        var dayColumnWidth = (pageWidth - (margin * 2) - firstColumnWidth) / WeekDays.Length;
+        var columnWidths = new List<double> { firstColumnWidth };
+        for (var i = 0; i < WeekDays.Length; i++)
+        {
+            columnWidths.Add(dayColumnWidth);
         }
-        
-        sb.AppendLine("            </tr>");
-        sb.AppendLine("        </thead>");
-        sb.AppendLine("        <tbody>");
 
-        foreach (var staffName in staffNames)
+        var tableRows = BuildPdfTableRows(columnWidths, rowPadding);
+        var pageContents = new List<string>();
+        var rowIndex = 0;
+        var pageNumber = 1;
+
+        do
         {
-            sb.AppendLine("            <tr>");
-            var staffClass = staffName == "Unfilled" ? " class=\"unfilled\"" : string.Empty;
-            sb.AppendLine($"                <td{staffClass}>{System.Net.WebUtility.HtmlEncode(staffName)}</td>");
+            var content = new System.Text.StringBuilder();
+            AppendPdfText(content, "F2", 13.5, margin, titleY, "Weekly Rota");
+            AppendPdfText(content, "F1", 9.5, margin + 108, titleY + 1, $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
+            var yTop = tableTopY;
+            var headerLabels = new[] { "Staff name" }.Concat(WeekDays).ToList();
+            AppendPdfHeaderRow(content, margin, yTop, headerHeight, columnWidths, headerLabels);
+            yTop -= headerHeight;
+
+            if (!tableRows.Any())
+            {
+                AppendPdfBorderedCell(content, margin, yTop, pageWidth - (margin * 2), 28, 1.0);
+                AppendPdfText(content, "F1", 10, margin + 6, yTop - 18, "No rota rows to export.");
+                yTop -= 28;
+            }
+
+            while (rowIndex < tableRows.Count)
+            {
+                var row = tableRows[rowIndex];
+                var maxLines = Math.Max(1, row.Max(cell => cell.Count));
+                var rowHeight = (rowPadding * 2) + (maxLines * textLineHeight);
+
+                if (yTop - rowHeight < footerY + 12)
+                {
+                    break;
+                }
+
+                var x = margin;
+                for (var col = 0; col < row.Count; col++)
+                {
+                    var width = columnWidths[col];
+                    AppendPdfBorderedCell(content, x, yTop, width, rowHeight, 1.0);
+
+                    var lineY = yTop - rowPadding - 8;
+                    foreach (var line in row[col])
+                    {
+                        AppendPdfText(content, "F1", 9.2, x + 4, lineY, line);
+                        lineY -= textLineHeight;
+                    }
+
+                    x += width;
+                }
+
+                yTop -= rowHeight;
+                rowIndex++;
+            }
+
+            AppendPdfText(content, "F1", 9, pageWidth - margin - 50, footerY, $"Page {pageNumber}");
+            pageContents.Add(content.ToString());
+            pageNumber++;
+        }
+        while (rowIndex < tableRows.Count || pageContents.Count == 0);
+
+        return BuildPdfDocument(pageContents, pageWidth, pageHeight);
+    }
+
+    private static string EscapePdfText(string text)
+    {
+        return text
+            .Replace("\\", "\\\\")
+            .Replace("(", "\\(")
+            .Replace(")", "\\)");
+    }
+
+    private List<List<List<string>>> BuildPdfTableRows(List<double> columnWidths, double padding)
+    {
+        var rows = new List<List<List<string>>>();
+
+        foreach (var staffName in GetDisplayedStaffNames())
+        {
+            var row = new List<List<string>>
+            {
+                WrapPdfCellText(staffName, columnWidths[0], padding)
+            };
 
             foreach (var day in WeekDays)
             {
-                var cellRows = GetRowsForStaffAndDay(staffName, day).ToList();
-                sb.Append("                <td>");
-                
-                if (cellRows.Any())
+                var ranges = GetRowsForStaffAndDay(staffName, day)
+                    .Select(FormatTimeRange)
+                    .ToList();
+
+                var lines = ranges.Any()
+                    ? ranges.SelectMany(range => WrapPdfCellText(range, columnWidths[1], padding)).ToList()
+                    : new List<string> { "-" };
+
+                row.Add(lines);
+            }
+
+            rows.Add(row);
+        }
+
+        return rows;
+    }
+
+    private static List<string> WrapPdfCellText(string text, double cellWidth, double padding)
+    {
+        var sanitized = string.IsNullOrWhiteSpace(text) ? "-" : text.Trim();
+        var maxChars = Math.Max(6, (int)Math.Floor((cellWidth - (padding * 2) - 6) / 5.1));
+        var output = new List<string>();
+
+        foreach (var sourceLine in sanitized.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (sourceLine.Length <= maxChars)
+            {
+                output.Add(sourceLine);
+                continue;
+            }
+
+            var words = sourceLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+            {
+                output.Add(sourceLine[..Math.Min(sourceLine.Length, maxChars)]);
+                continue;
+            }
+
+            var lineBuilder = new System.Text.StringBuilder();
+            foreach (var word in words)
+            {
+                var next = lineBuilder.Length == 0 ? word : $"{lineBuilder} {word}";
+                if (next.Length <= maxChars)
                 {
-                    foreach (var (assignment, index) in cellRows.Select((a, i) => (a, i)))
+                    if (lineBuilder.Length > 0)
                     {
-                        if (index > 0) sb.Append("<br>");
-                        sb.Append(System.Net.WebUtility.HtmlEncode(FormatTimeRange(assignment)));
+                        lineBuilder.Append(' ');
                     }
+
+                    lineBuilder.Append(word);
+                    continue;
+                }
+
+                if (lineBuilder.Length > 0)
+                {
+                    output.Add(lineBuilder.ToString());
+                    lineBuilder.Clear();
+                }
+
+                if (word.Length > maxChars)
+                {
+                    output.Add(word[..(maxChars - 1)] + "~");
                 }
                 else
                 {
-                    sb.Append("—");
+                    lineBuilder.Append(word);
                 }
-                
-                sb.AppendLine("</td>");
             }
-            
-            sb.AppendLine("            </tr>");
+
+            if (lineBuilder.Length > 0)
+            {
+                output.Add(lineBuilder.ToString());
+            }
         }
 
-        sb.AppendLine("        </tbody>");
-        sb.AppendLine("    </table>");
-        sb.AppendLine("    <p style=\"margin-top: 20px; font-size: 12px; color: #666;\">");
-        sb.AppendLine("        To save as PDF: Use your browser's Print function (Ctrl+P or Cmd+P) and select 'Save as PDF'.");
-        sb.AppendLine("    </p>");
-        sb.AppendLine("</body>");
-        sb.AppendLine("</html>");
+        return output.Any() ? output : new List<string> { "-" };
+    }
 
-        return sb.ToString();
+    private static byte[] BuildPdfDocument(List<string> pageContents, double pageWidth, double pageHeight)
+    {
+        using var stream = new MemoryStream();
+        using var writer = new StreamWriter(stream, System.Text.Encoding.ASCII, leaveOpen: true);
+
+        void WriteAscii(string text)
+        {
+            writer.Write(text);
+            writer.Flush();
+        }
+
+        var totalObjects = 4 + (pageContents.Count * 2);
+        var offsets = new long[totalObjects + 1];
+
+        WriteAscii("%PDF-1.4\n");
+
+        void WriteObject(int number, string body)
+        {
+            offsets[number] = stream.Position;
+            WriteAscii($"{number} 0 obj\n{body}\nendobj\n");
+        }
+
+        WriteObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
+
+        var kids = string.Join(" ", Enumerable.Range(0, pageContents.Count).Select(index => $"{5 + (index * 2)} 0 R"));
+        WriteObject(2, $"<< /Type /Pages /Count {pageContents.Count} /Kids [{kids}] >>");
+        WriteObject(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+        WriteObject(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+
+        for (var index = 0; index < pageContents.Count; index++)
+        {
+            var pageObj = 5 + (index * 2);
+            var contentObj = pageObj + 1;
+            var contentBytes = System.Text.Encoding.ASCII.GetBytes(pageContents[index]);
+
+            WriteObject(pageObj,
+                $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {PdfNumber(pageWidth)} {PdfNumber(pageHeight)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {contentObj} 0 R >>");
+
+            offsets[contentObj] = stream.Position;
+            WriteAscii($"{contentObj} 0 obj\n<< /Length {contentBytes.Length} >>\nstream\n");
+            stream.Write(contentBytes, 0, contentBytes.Length);
+            WriteAscii("\nendstream\nendobj\n");
+        }
+
+        var xrefPosition = stream.Position;
+        WriteAscii($"xref\n0 {offsets.Length}\n");
+        WriteAscii("0000000000 65535 f \n");
+
+        for (var index = 1; index < offsets.Length; index++)
+        {
+            WriteAscii($"{offsets[index]:0000000000} 00000 n \n");
+        }
+
+        WriteAscii($"trailer\n<< /Size {offsets.Length} /Root 1 0 R >>\nstartxref\n{xrefPosition}\n%%EOF");
+        return stream.ToArray();
+    }
+
+    private static void AppendPdfHeaderRow(System.Text.StringBuilder builder, double xStart, double yTop, double height, IReadOnlyList<double> widths, IReadOnlyList<string> labels)
+    {
+        var x = xStart;
+        for (var index = 0; index < widths.Count; index++)
+        {
+            var width = widths[index];
+            var y = yTop - height;
+            builder.AppendLine("q");
+            builder.AppendLine("0.82 g");
+            builder.AppendLine($"{PdfNumber(x)} {PdfNumber(y)} {PdfNumber(width)} {PdfNumber(height)} re f");
+            builder.AppendLine("Q");
+
+            AppendPdfBorderedCell(builder, x, yTop, width, height, 1.0);
+            AppendPdfText(builder, "F2", 9.8, x + 4, yTop - 15, labels[index]);
+            x += width;
+        }
+    }
+
+    private static void AppendPdfBorderedCell(System.Text.StringBuilder builder, double x, double yTop, double width, double height, double lineWidth)
+    {
+        var y = yTop - height;
+        builder.AppendLine($"{PdfNumber(lineWidth)} w");
+        builder.AppendLine($"{PdfNumber(x)} {PdfNumber(y)} {PdfNumber(width)} {PdfNumber(height)} re S");
+    }
+
+    private static void AppendPdfText(System.Text.StringBuilder builder, string fontName, double size, double x, double y, string text)
+    {
+        builder.AppendLine("BT");
+        builder.AppendLine($"/{fontName} {PdfNumber(size)} Tf");
+        builder.AppendLine($"1 0 0 1 {PdfNumber(x)} {PdfNumber(y)} Tm");
+        builder.AppendLine($"({EscapePdfText(text)}) Tj");
+        builder.AppendLine("ET");
+    }
+
+    private static string PdfNumber(double value)
+    {
+        return value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private void ToggleEditMode()
