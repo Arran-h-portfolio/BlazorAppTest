@@ -631,34 +631,19 @@
     {
         try
         {
-            // Try to save to Documents folder first, fall back to Desktop
-            string? destinationPath = null;
-            
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
+            var saveResult = await SaveFileWithPickerAsync(fileName, content);
+
+            if (string.IsNullOrWhiteSpace(saveResult.Path))
             {
-                destinationPath = Path.Combine(documentsPath, fileName);
-            }
-            else
-            {
-                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                if (!string.IsNullOrEmpty(desktopPath) && Directory.Exists(desktopPath))
-                {
-                    destinationPath = Path.Combine(desktopPath, fileName);
-                }
+                dashboardStatusMessage = "Excel export cancelled. No file was saved.";
+                return;
             }
 
-            if (string.IsNullOrEmpty(destinationPath))
-            {
-                // Fallback to current directory if neither works
-                destinationPath = Path.Combine(AppContext.BaseDirectory, fileName);
-            }
+            dashboardStatusMessage = saveResult.UsedFallback
+                ? $"Save picker unavailable. Excel export saved automatically to: {saveResult.Path}"
+                : $"Excel export saved to: {saveResult.Path}";
 
-            // Write the file
-            await File.WriteAllBytesAsync(destinationPath, content);
-            
-            dashboardStatusMessage = $"✓ Export saved successfully to: {destinationPath}";
-            System.Diagnostics.Debug.WriteLine($"Export saved to: {destinationPath}");
+            System.Diagnostics.Debug.WriteLine($"Excel export saved to: {saveResult.Path}");
         }
         catch (Exception ex)
         {
@@ -666,6 +651,68 @@
             System.Diagnostics.Debug.WriteLine($"File save error: {ex}");
             throw;
         }
+    }
+
+    private static async Task<(string? Path, bool UsedFallback)> SaveFileWithPickerAsync(string fileName, byte[] content)
+    {
+        var tempPath = Path.Combine(FileSystem.CacheDirectory, fileName);
+        await File.WriteAllBytesAsync(tempPath, content);
+
+#if MACCATALYST || IOS
+        var tcs = new TaskCompletionSource<string?>();
+
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                var sourceUrl = Foundation.NSUrl.FromFilename(tempPath);
+                var picker = new UIKit.UIDocumentPickerViewController(new[] { sourceUrl }, true);
+                picker.ShouldShowFileExtensions = true;
+                picker.ModalPresentationStyle = UIKit.UIModalPresentationStyle.FormSheet;
+
+                picker.DidPickDocumentAtUrls += (_, args) =>
+                {
+                    var pickedUrl = args.Urls?.FirstOrDefault();
+                    tcs.TrySetResult(pickedUrl?.Path);
+                };
+
+                picker.WasCancelled += (_, _) => tcs.TrySetResult(null);
+
+                var root = Microsoft.Maui.ApplicationModel.Platform.GetCurrentUIViewController();
+                while (root?.PresentedViewController is not null)
+                {
+                    root = root.PresentedViewController;
+                }
+
+                if (root is null)
+                {
+                    var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                    await File.WriteAllBytesAsync(fallbackPath, content);
+                    tcs.TrySetResult(fallbackPath);
+                    return;
+                }
+
+                root.PresentViewController(picker, true, null);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Save picker error: {ex}");
+                var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                await File.WriteAllBytesAsync(fallbackPath, content);
+                tcs.TrySetResult(fallbackPath);
+            }
+        });
+
+        var chosenPath = await tcs.Task;
+        var didUseFallback = !string.IsNullOrWhiteSpace(chosenPath)
+            && string.Equals(Path.GetDirectoryName(chosenPath), Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), StringComparison.OrdinalIgnoreCase);
+
+        return (chosenPath, didUseFallback);
+#else
+        var fallbackPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+        await File.WriteAllBytesAsync(fallbackPath, content);
+        return (fallbackPath, true);
+#endif
     }
 
     private async Task ShowExportModal()

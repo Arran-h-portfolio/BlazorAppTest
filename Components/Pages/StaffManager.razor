@@ -40,6 +40,12 @@
                     <input id="newStaffName" class="form-control" @bind="newStaffName" placeholder="e.g. Alex Johnson" />
                 </div>
 
+                <div class="form-field-group">
+                    <label class="form-label" for="newEmployeeId">Staff ID (optional)</label>
+                    <input id="newEmployeeId" class="form-control" @bind="newEmployeeId" placeholder="e.g. 1024" />
+                    <div class="form-text">Leave blank to auto-generate a default ID.</div>
+                </div>
+
                 <div class="form-check form-switch mb-0">
                     <input class="form-check-input" type="checkbox" role="switch" id="isManager" @bind="newIsManager" />
                     <label class="form-check-label" for="isManager">Manager</label>
@@ -165,6 +171,7 @@
                     <table class="staff-table">
                         <thead>
                             <tr>
+                                <th>Staff ID</th>
                                 <th>Name</th>
                                 <th>Roles</th>
                                 <th>Available days</th>
@@ -178,6 +185,9 @@
                             @foreach (var staff in staffList)
                             {
                                 <tr>
+                                    <td>
+                                        <span class="cell-muted">@staff.EmployeeID</span>
+                                    </td>
                                     <td>
                                         <span class="staff-name">@staff.NewStaffName</span>
                                         @if (staff.IsManager)
@@ -300,6 +310,12 @@
                         <input class="form-control" @bind="editStaffName" />
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Staff ID</label>
+                        <input class="form-control" @bind="editStaffEmployeeId" placeholder="e.g. 1024" />
+                        <div class="form-text">Leave blank to generate a default ID.</div>
+                    </div>
+
                     <div class="d-flex flex-wrap gap-3 mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="editIsManager" @bind="editIsManager" />
@@ -420,6 +436,7 @@
 {
     private bool showInput = false;
     private string newStaffName = "";
+    private string newEmployeeId = string.Empty;
 
     private decimal newHourlyWage = 0;
     private bool newIsManager = false;
@@ -455,6 +472,7 @@
     private bool showEditStaffDetails = false;
     private StaffInput? staffDetailsToEdit = null;
     private string editStaffName = string.Empty;
+    private string editStaffEmployeeId = string.Empty;
     private bool editIsManager = false;
     private bool editIsActive = true;
     private bool editIsAvailableThisWeek = false;
@@ -484,6 +502,7 @@
     void ResetNewStaffForm()
     {
         newStaffName = string.Empty;
+        newEmployeeId = string.Empty;
         newIsManager = false;
         newStartTime = string.Empty;
         newEndTime = string.Empty;
@@ -499,33 +518,43 @@
 
     async Task SaveStaff()
     {
-        if (!string.IsNullOrWhiteSpace(newStaffName))
+        if (string.IsNullOrWhiteSpace(newStaffName))
         {
-            var initialDailyAvailability = BuildDailyAvailabilityFromWorkingDays();
-
-            var newStaff = new StaffInput
-            {
-                EmployeeID = Guid.NewGuid().ToString(),
-                NewStaffName = newStaffName.Trim(),
-                LastNameInitial = string.Empty,
-                IsManager = newIsManager,
-                WorkingDays = string.Join(", ", newWorkingDays),
-                StartTime = newStartTime,
-                EndTime = newEndTime,
-                IsActive = true,
-                HourlyWage = NormalizeHourlyWage(newHourlyWage),
-                IsAvailableThisWeek = initialDailyAvailability.Any(x => x.Value),
-                PreferredDaysPerWeek = NormalizePreferredDaysPerWeek(newPreferredDaysPerWeek, newWorkingDays.Count),
-                JobRoles = newJobRoles.ToList(),
-                DailyAvailability = initialDailyAvailability
-            };
-
-            staffList.Add(newStaff);
-            await SaveStaffListAsync();
-            statusMessage = $"{newStaff.NewStaffName} added to the staff list.";
-            ResetNewStaffForm();
-            showInput = false;
+            statusMessage = "Enter a staff name before saving.";
+            return;
         }
+
+        var resolvedEmployeeId = ResolveEmployeeId(newEmployeeId);
+        if (IsEmployeeIdInUse(resolvedEmployeeId))
+        {
+            statusMessage = "Staff ID already exists. Enter a unique ID or leave blank for default.";
+            return;
+        }
+
+        var initialDailyAvailability = BuildDailyAvailabilityFromWorkingDays();
+
+        var newStaff = new StaffInput
+        {
+            EmployeeID = resolvedEmployeeId,
+            NewStaffName = newStaffName.Trim(),
+            LastNameInitial = string.Empty,
+            IsManager = newIsManager,
+            WorkingDays = string.Join(", ", newWorkingDays),
+            StartTime = newStartTime,
+            EndTime = newEndTime,
+            IsActive = true,
+            HourlyWage = NormalizeHourlyWage(newHourlyWage),
+            IsAvailableThisWeek = initialDailyAvailability.Any(x => x.Value),
+            PreferredDaysPerWeek = NormalizePreferredDaysPerWeek(newPreferredDaysPerWeek, newWorkingDays.Count),
+            JobRoles = newJobRoles.ToList(),
+            DailyAvailability = initialDailyAvailability
+        };
+
+        staffList.Add(newStaff);
+        await SaveStaffListAsync();
+        statusMessage = $"{newStaff.NewStaffName} added with ID {newStaff.EmployeeID}.";
+        ResetNewStaffForm();
+        showInput = false;
     }
 
     Dictionary<string, bool> BuildDailyAvailabilityFromWorkingDays()
@@ -657,6 +686,7 @@
     {
         staffDetailsToEdit = staff;
         editStaffName = staff.NewStaffName;
+        editStaffEmployeeId = staff.EmployeeID;
         editIsManager = staff.IsManager;
         editIsActive = staff.IsActive;
         editIsAvailableThisWeek = staff.IsAvailableThisWeek;
@@ -680,6 +710,7 @@
         showEditStaffDetails = false;
         staffDetailsToEdit = null;
         editStaffName = string.Empty;
+        editStaffEmployeeId = string.Empty;
         editIsManager = false;
         editIsActive = true;
         editIsAvailableThisWeek = false;
@@ -735,7 +766,17 @@
             return;
         }
 
+        var previousEmployeeId = staffDetailsToEdit.EmployeeID;
+        var updatedEmployeeId = ResolveEmployeeId(editStaffEmployeeId);
+
+        if (IsEmployeeIdInUse(updatedEmployeeId, staffDetailsToEdit))
+        {
+            statusMessage = "Staff ID already exists. Enter a unique ID or leave blank for default.";
+            return;
+        }
+
         var updatedName = editStaffName.Trim();
+        staffDetailsToEdit.EmployeeID = updatedEmployeeId;
         staffDetailsToEdit.NewStaffName = updatedName;
         staffDetailsToEdit.IsManager = editIsManager;
         staffDetailsToEdit.IsActive = editIsActive;
@@ -762,8 +803,13 @@
 
         staffDetailsToEdit.DailyAvailability = updatedAvailability;
 
+        if (!string.Equals(previousEmployeeId, updatedEmployeeId, StringComparison.OrdinalIgnoreCase))
+        {
+            await UpdateStoredRotaRowsEmployeeIdAsync(previousEmployeeId, updatedEmployeeId);
+        }
+
         await SaveStaffListAsync();
-        statusMessage = $"{updatedName} updated successfully.";
+        statusMessage = $"{updatedName} updated successfully (ID: {updatedEmployeeId}).";
         CloseEditStaffDetails();
     }
 
@@ -790,6 +836,51 @@
 
                 return staff.DailyAvailability.TryGetValue(day, out var isAvailable) ? isAvailable : true;
             });
+    }
+
+    private sealed class StoredRotaRow
+    {
+        public string Day { get; set; } = string.Empty;
+        public string EmployeeID { get; set; } = string.Empty;
+        public string StaffName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+    }
+
+    private async Task UpdateStoredRotaRowsEmployeeIdAsync(string previousEmployeeId, string updatedEmployeeId)
+    {
+        var rows = await localStorage.GetItemAsync<List<StoredRotaRow>>("generatedRotaRows") ?? new List<StoredRotaRow>();
+        var updatedAny = false;
+
+        foreach (var row in rows)
+        {
+            if (string.Equals(row.EmployeeID, previousEmployeeId, StringComparison.OrdinalIgnoreCase))
+            {
+                row.EmployeeID = updatedEmployeeId;
+                updatedAny = true;
+            }
+        }
+
+        if (updatedAny)
+        {
+            await localStorage.SetItemAsync("generatedRotaRows", rows);
+        }
+    }
+
+    private static string ResolveEmployeeId(string? inputEmployeeId)
+    {
+        var cleaned = (inputEmployeeId ?? string.Empty).Trim();
+        return string.IsNullOrWhiteSpace(cleaned)
+            ? Guid.NewGuid().ToString()
+            : cleaned;
+    }
+
+    private bool IsEmployeeIdInUse(string employeeId, StaffInput? excludeStaff = null)
+    {
+        return staffList.Any(staff =>
+            !ReferenceEquals(staff, excludeStaff)
+            && string.Equals(staff.EmployeeID, employeeId, StringComparison.OrdinalIgnoreCase));
     }
 
     private int GetEffectivePreferredDaysPerWeek(StaffInput staff)

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RotaHub")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+00f839d3847efee29420b3eb604abecc59f58919")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+16f909a93b08c135b651ee0174d6400941a5e6ae")]
 [assembly: System.Reflection.AssemblyProductAttribute("RotaHub")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RotaHub")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
